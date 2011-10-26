@@ -1,0 +1,48 @@
+#!/system/bin/sh
+# Get RAM size in KB
+RAMSIZE=`grep MemTotal /proc/meminfo | awk '{ print \$2 }'`
+# 128 is 12.5% of 1024, so ramdisk will be 12.5% of available RAM
+ZRAMSIZE=$(($RAMSIZE*128))
+echo "zram Manager Script"
+echo ""
+
+show_zraminfo()
+{
+echo "Unrecognized or missing option."
+echo "Run 'zram enable' or 'zram disable' as root."
+echo ""
+echo "The numbers below are in kilobytes."
+echo ""
+echo "             total         used         free"
+free | tail -1
+}
+
+if [ $1 ]; then
+	if [ $1 == "enable" ]; then
+		echo "Enabling and activating zram."
+		mount -o rw,remount /system /system
+		echo "#!/system/bin/sh" > /system/etc/init.d/05zram
+		echo "echo 1 > /sys/block/zram0/reset" >> /system/etc/init.d/05zram
+		echo "echo $ZRAMSIZE > /sys/block/zram0/disksize" >> /system/etc/init.d/05zram
+		echo "mkswap /dev/block/zram0" >> /system/etc/init.d/05zram
+		echo "swapon /dev/block/zram0" >> /system/etc/init.d/05zram
+		chmod 755 /system/etc/init.d/05zram
+		/system/etc/init.d/05zram
+		mount -o ro,remount /system /system
+		echo ""
+		echo "Done."
+	elif [ $1 == "disable" ]; then
+		echo "Deactivating and disabling zram."
+		swapoff /dev/block/zram0 >/dev/null 2>&1
+		echo 1 > /sys/block/zram0/reset >/dev/null 2>&1
+		mount -o rw,remount /system /system
+		rm /etc/init.d/05zram
+		mount -o ro,remount /system /system
+		echo ""
+		echo "Done."
+	else
+		show_zraminfo
+	fi
+else
+show_zraminfo
+fi

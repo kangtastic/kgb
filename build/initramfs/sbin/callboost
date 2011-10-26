@@ -1,0 +1,132 @@
+#!/system/bin/sh
+echo "In-call boost settings manager"
+echo ""
+
+BOOST_RCV_PATH=/sys/devices/virtual/misc/voodoo_sound/incall_boost_rcv
+BOOST_BT_PATH=/sys/devices/virtual/misc/voodoo_sound/incall_boost_bt
+BOOST_SPK_PATH=/sys/devices/virtual/misc/voodoo_sound/incall_boost_spk
+BOOST_HP_PATH=/sys/devices/virtual/misc/voodoo_sound/incall_boost_hp
+INITSCRIPT_PATH=/system/etc/init.d/91incall_boost
+
+show_options()
+{
+echo "Usage: callboost [OPTION]"
+echo "Valid options:"
+echo ""
+echo "  enable    Set custom boost settings"
+echo "            Install boot script"
+echo "  disable   Remove boot script"
+echo "            Reset boost settings to defaults"
+echo "  show      Show current status"
+echo ""
+}
+
+show_status()
+{
+echo "Current settings:"
+echo ""
+echo "	RCV	BT	SPK	HP"
+echo "	$BOOST_RCV	$BOOST_BT	$BOOST_HP	$BOOST_SPK"
+echo ""
+echo "    0: +0dB, 1: +6dB, 2: +12dB, 3: +18dB"
+echo ""
+}
+
+boost_probe()
+{
+if  [ -e $BOOST_RCV_PATH ] && [ -e $BOOST_BT_PATH ] && [ -e $BOOST_SPK_PATH ] && [ -e $BOOST_HP_PATH ]; then
+	return 1
+else
+	return 0
+fi
+}
+
+write_initscript()
+{
+echo "#!/system/bin/sh" > $INITSCRIPT_PATH
+echo "if  [ -e $BOOST_RCV_PATH ] &&
+    [ -e $BOOST_BT_PATH ] &&
+    [ -e $BOOST_SPK_PATH ] &&
+    [ -e $BOOST_HP_PATH ]; then" >> $INITSCRIPT_PATH
+echo "echo $1 > $BOOST_RCV_PATH" >> $INITSCRIPT_PATH
+echo "echo $2 > $BOOST_BT_PATH" >> $INITSCRIPT_PATH
+echo "echo $3 > $BOOST_SPK_PATH" >> $INITSCRIPT_PATH
+echo "echo $4 > $BOOST_HP_PATH" >> $INITSCRIPT_PATH
+chmod 755 $INITSCRIPT_PATH
+echo "fi" >> $INITSCRIPT_PATH
+}
+
+mount_system_rw()
+{
+mount -o rw,remount /system /system
+}
+
+mount_system_ro()
+{
+mount -o ro,remount /system /system
+}
+
+boost_probe
+
+if [ $? ]; then
+	BOOST_RCV=`cat $BOOST_RCV_PATH`
+	BOOST_BT=`cat $BOOST_BT_PATH`
+	BOOST_SPK=`cat $BOOST_SPK_PATH`
+	BOOST_HP=`cat $BOOST_HP_PATH`
+
+	if [ $1 ]; then
+
+		if [ $1 == "enable" ]; then
+			show_status
+
+			echo -n "    New RECEIVER boost value:	"
+			read BOOST_RCV
+			echo -n "    New BLUETOOTH boost value:	"
+			read BOOST_BT
+			echo -n "    New SPEAKER boost value:	"
+			read BOOST_SPK
+			echo -n "    New HEADPHONE boost value:	"
+			read BOOST_HP
+			echo ""
+
+			mount_system_rw
+			write_initscript $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP
+			mount_system_ro
+			echo "Boot script installed."
+
+			$INITSCRIPT_PATH
+			echo "In-call boost values set."
+
+			echo ""
+			show_status
+		elif [ $1 == "disable" ]; then
+			echo 0 > $BOOST_RCV_PATH
+			echo 0 > $BOOST_BT_PATH
+			echo 0 > $BOOST_SPK_PATH
+			echo 0 > $BOOST_HP_PATH
+			echo "In-call boost values reset to defaults."
+
+			if [ -e $INITSCRIPT_PATH ]; then
+				mount_system_rw
+				rm $INITSCRIPT_PATH
+				mount_system_ro
+				echo "Boot script removed."
+			else
+				echo "Boot script not found. No need to remove."
+			fi
+
+			echo ""
+			show_status
+		elif [ $1 == "show" ]; then
+			show_status
+		else
+			echo "Unrecognized option."
+			echo ""
+			show_options
+		fi
+	else
+		show_options
+	fi
+else
+echo "Kernel does not support in-call boost settings."
+fi
