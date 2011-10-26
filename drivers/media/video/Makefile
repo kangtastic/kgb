@@ -85,7 +85,7 @@ obj-$(CONFIG_VIDEO_CE147) += ce147-garnett.o
 else ifeq ($(TARGET_PRODUCT),SPH-D700)
 obj-$(CONFIG_VIDEO_CE147) += ce147-victory.o
 else
-obj-$(CONFIG_VIDEO_CE147) += ce147.o
+obj-$(CONFIG_VIDEO_CE147) += ce147-atlas.o
 endif
 
 obj-$(CONFIG_SOC_CAMERA_MT9M001)	+= mt9m001.o
