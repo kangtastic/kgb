@@ -1533,6 +1533,18 @@ void *__vmalloc_area(struct vm_struct *area, gfp_t gfp_mask, pgprot_t prot)
 	return addr;
 }
 
+static inline void *__vmalloc_node_flags(unsigned long size, int node, gfp_t flags)
+{
+  return __vmalloc_node(size, 1, flags, PAGE_KERNEL, node, __builtin_return_address(0));
+}
+
+void *vzalloc(unsigned long size)
+{
+  return __vmalloc_node_flags(size, -1, GFP_KERNEL | __GFP_HIGHMEM | __GFP_ZERO);
+}
+EXPORT_SYMBOL(vzalloc);
+
+
 /**
  *	__vmalloc_node  -  allocate virtually contiguous memory
  *	@size:		allocation size
