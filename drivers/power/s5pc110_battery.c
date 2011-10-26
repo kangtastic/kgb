@@ -928,15 +928,20 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 }
 
 #ifdef __VZW_AUTH_CHECK__
-extern int verizon_batt_auth_full_check(void);
-extern int verizon_batt_auth_check(void);
+//extern int verizon_batt_auth_full_check(void);
+//extern int verizon_batt_auth_check(void);
 
-static int batt_auth_full_check = 0;
+//static int batt_auth_full_check = 0;
 
 static int s3c_bat_check_v_f(struct chg_data *chg)
 {
-	int retval = 0;
 
+	if (chg->bat_info.batt_health == POWER_SUPPLY_HEALTH_UNSPEC_FAILURE) {
+		chg->bat_info.batt_health = POWER_SUPPLY_HEALTH_GOOD;
+		bat_info("/BATT_ID/ %s POWER_SUPPLY_HEALTH_UNSPEC_FAILURE\n", __func__);
+	}
+
+	/*
 	if (batt_auth_full_check == 0) {
 		retval = verizon_batt_auth_full_check();
 		batt_auth_full_check = 1;
@@ -952,6 +957,7 @@ static int s3c_bat_check_v_f(struct chg_data *chg)
 		if (!retval)
 			return 0;
 	}
+	*/
 
 	return 1;
 }
@@ -1296,6 +1302,9 @@ static ssize_t s3c_bat_show_attrs(struct device *dev,
 		break;
 #ifdef  __VZW_AUTH_CHECK__
         case AUTH_BATTERY: 
+		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", 1);
+	break;
+		/* 
 		if (chg->jig_status)
 			i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", 1);
 		else
@@ -1303,6 +1312,7 @@ static ssize_t s3c_bat_show_attrs(struct device *dev,
 				(chg->bat_info.batt_health == POWER_SUPPLY_HEALTH_UNSPEC_FAILURE) ?
 				0 : 1);
                 break;
+		*/
 #endif
         case BATT_CHG_CURRENT_AVER:
                 i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",

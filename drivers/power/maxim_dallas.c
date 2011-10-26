@@ -317,6 +317,7 @@ static int CRC_protection(void)
 
 int verizon_batt_auth_full_check(void)
 {
+	#if 0
 	int i;
 	int retval = 0;
 
@@ -350,10 +351,15 @@ int verizon_batt_auth_full_check(void)
 	}
 
 	return retval;
+	#endif
+
+	pr_info("/BATT_ID/ %s: accepted\n", __func__);
+	return 1;
 }
 
 static int _verizon_batt_auth_multi_check(void)
 {
+	#if 0
 	int i;
 	int retval = 0;
 
@@ -367,10 +373,13 @@ static int _verizon_batt_auth_multi_check(void)
 	}
 
 	return retval;
+	#endif
+	return 1;
 }
 
 int verizon_batt_auth_check(void)
 {
+	#if 0
 	int result = 0;
 
 	if (!Reset_TA())
@@ -379,5 +388,7 @@ int verizon_batt_auth_check(void)
 		result = _verizon_batt_auth_multi_check();
 
 	return result;
+	#endif
+	return 1;
 }
 
