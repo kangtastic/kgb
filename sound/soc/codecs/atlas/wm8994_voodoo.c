@@ -102,6 +102,12 @@ unsigned int eq_band_values[5][4] = {
 bool stereo_expansion = false;
 short unsigned int stereo_expansion_gain = 16;
 
+// call volume boost hack
+extern unsigned short incall_boost_rcv;
+extern unsigned short incall_boost_bt;
+extern unsigned short incall_boost_spk;
+extern unsigned short incall_boost_hp;
+
 // keep here a pointer to the codec structure
 struct snd_soc_codec *codec;
 
@@ -1091,6 +1097,116 @@ DECLARE_BOOL_STORE_UPDATE_WITH_MUTE(dac_direct,
 				    update_dac_direct,
 				    false);
 
+static ssize_t incall_boost_rcv_show(struct device* dev, struct device_attribute* attr,
+				     char* buf)
+{
+	return sprintf( buf, "%d\n", incall_boost_rcv >> WM8994_AIF2DAC_BOOST_SHIFT );
+}
+
+
+static ssize_t incall_boost_rcv_store( struct device *dev,
+				      struct device_attribute *attr,
+				      const char *buf, size_t size )
+{
+	unsigned short newval = 2;
+
+	if ( sscanf( buf, "%hd", &newval ) == 1 )
+	{
+		if ( newval > 3 )
+		{
+			newval = 3;
+		}
+
+		incall_boost_rcv = newval << WM8994_AIF2DAC_BOOST_SHIFT;
+
+		wm8994_write(codec, WM8994_AIF2_CONTROL_2, incall_boost_rcv);
+	}
+	return size;
+}
+
+
+static ssize_t incall_boost_bt_show(struct device* dev, struct device_attribute* attr,
+				     char* buf)
+{
+	return sprintf( buf, "%d\n", incall_boost_bt >> WM8994_AIF2DAC_BOOST_SHIFT );
+}
+
+
+static ssize_t incall_boost_bt_store( struct device *dev,
+				      struct device_attribute *attr,
+				      const char *buf, size_t size )
+{
+	unsigned short newval = 0;
+
+	if ( sscanf( buf, "%hd", &newval ) == 1 )
+	{
+		if ( newval > 3 )
+		{
+			newval = 3;
+		}
+
+		incall_boost_bt = newval << WM8994_AIF2DAC_BOOST_SHIFT;
+
+		wm8994_write(codec, WM8994_AIF2_CONTROL_2, incall_boost_bt);
+	}
+	return size;
+}
+
+static ssize_t incall_boost_spk_show(struct device* dev, struct device_attribute* attr,
+				     char* buf)
+{
+	return sprintf( buf, "%d\n", incall_boost_spk >> WM8994_AIF2DAC_BOOST_SHIFT  );
+}
+
+
+static ssize_t incall_boost_spk_store( struct device *dev,
+				      struct device_attribute *attr,
+				      const char *buf, size_t size )
+{
+	unsigned short newval = 0;
+
+	if ( sscanf( buf, "%hd", &newval ) == 1 )
+	{
+		if ( newval > 3 )
+		{
+			newval = 3;
+		}
+
+		incall_boost_spk = newval << WM8994_AIF2DAC_BOOST_SHIFT;
+
+		wm8994_write(codec, WM8994_AIF2_CONTROL_2, incall_boost_spk);
+	}
+	return size;
+}
+
+static ssize_t incall_boost_hp_show(struct device* dev, struct device_attribute* attr,
+				     char* buf)
+{
+	return sprintf( buf, "%d\n", incall_boost_hp >> WM8994_AIF2DAC_BOOST_SHIFT  );
+}
+
+
+static ssize_t incall_boost_hp_store( struct device *dev,
+				      struct device_attribute *attr,
+				      const char *buf, size_t size )
+{
+	unsigned short newval = 0;
+
+	if ( sscanf( buf, "%hd", &newval ) == 1 )
+	{
+		if ( newval > 3 )
+		{
+			newval = 3;
+		}
+
+		incall_boost_hp = newval << WM8994_AIF2DAC_BOOST_SHIFT;
+
+		wm8994_write(codec, WM8994_AIF2_CONTROL_2, incall_boost_hp);
+	}
+	return size;
+}
+
+
 static ssize_t digital_gain_show(struct device *dev,
 				     struct device_attribute *attr, char *buf)
 {
@@ -1442,6 +1558,22 @@ static DEVICE_ATTR(adc_osr128, S_IRUGO | S_IWUGO,
 		   adc_osr128_show,
 		   adc_osr128_store);
 
+static DEVICE_ATTR(incall_boost_rcv, S_IRUGO | S_IWUGO,
+		   incall_boost_rcv_show,
+		   incall_boost_rcv_store);
+
+static DEVICE_ATTR(incall_boost_bt, S_IRUGO | S_IWUGO,
+		   incall_boost_bt_show,
+		   incall_boost_bt_store);
+
+static DEVICE_ATTR(incall_boost_spk, S_IRUGO | S_IWUGO,
+		   incall_boost_spk_show,
+		   incall_boost_spk_store);
+
+static DEVICE_ATTR(incall_boost_hp, S_IRUGO | S_IWUGO,
+		   incall_boost_hp_show,
+		   incall_boost_hp_store);
+
 #ifndef GALAXY_TAB_TEGRA
 static DEVICE_ATTR(fll_tuning, S_IRUGO | S_IWUGO,
 		   fll_tuning_show,
@@ -1538,6 +1670,12 @@ static struct attribute *voodoo_sound_attributes[] = {
 #ifdef CONFIG_SND_VOODOO_RECORD_PRESETS
 	&dev_attr_recording_preset.attr,
 #endif
+
+	&dev_attr_incall_boost_rcv.attr,
+	&dev_attr_incall_boost_bt.attr,
+	&dev_attr_incall_boost_spk.attr,
+	&dev_attr_incall_boost_hp.attr,
+
 	&dev_attr_dac_osr128.attr,
 	&dev_attr_adc_osr128.attr,
 #ifndef GALAXY_TAB_TEGRA
