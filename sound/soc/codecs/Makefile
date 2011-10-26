@@ -54,8 +54,8 @@ ifeq ($(CONFIG_SND_SOC_WM8994_VICTORY),y)
 snd-soc-wm8994-objs := victory/wm8994_samsung.o victory/wm8994_aries.o
 endif
 ifeq ($(CONFIG_SND_SOC_WM8994_ATLAS),y)
-ifeq ($(CONFIG_S5PV210_GARNETT_DELTA),y)
-snd-soc-wm8994-objs := garnett/wm8994_samsung.o garnett/wm8994_aries.o
+ifeq ($(CONFIG_SND_VOODOO),y)
+snd-soc-wm8994-objs := atlas/wm8994_samsung.o atlas/wm8994_aries.o atlas/wm8994_voodoo.o
 else
 snd-soc-wm8994-objs := atlas/wm8994_samsung.o atlas/wm8994_aries.o
 endif
