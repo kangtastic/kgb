@@ -114,6 +114,8 @@ source "drivers/staging/Kconfig"
 
 source "drivers/platform/Kconfig"
 
+source "drivers/tfsr/Kconfig"
 
+source "drivers/onedram/Kconfig"
 
 endmenu
