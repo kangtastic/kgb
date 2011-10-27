@@ -32,15 +32,6 @@ echo "    0: +0dB, 1: +6dB, 2: +12dB, 3: +18dB"
 echo ""
 }
 
-boost_probe()
-{
-if  [ -e $BOOST_RCV_PATH ] && [ -e $BOOST_BT_PATH ] && [ -e $BOOST_SPK_PATH ] && [ -e $BOOST_HP_PATH ]; then
-	return 1
-else
-	return 0
-fi
-}
-
 write_initscript()
 {
 echo "#!/system/bin/sh" > $INITSCRIPT_PATH
@@ -66,9 +57,8 @@ mount_system_ro()
 mount -o ro,remount /system /system
 }
 
-boost_probe
+if  [ -e $BOOST_RCV_PATH ] && [ -e $BOOST_BT_PATH ] && [ -e $BOOST_SPK_PATH ] && [ -e $BOOST_HP_PATH ]; then
 
-if [ $? ]; then
 	BOOST_RCV=`cat $BOOST_RCV_PATH`
 	BOOST_BT=`cat $BOOST_BT_PATH`
 	BOOST_SPK=`cat $BOOST_SPK_PATH`
@@ -79,6 +69,8 @@ if [ $? ]; then
 		if [ $1 == "enable" ]; then
 			show_status
 
+			echo "Recommended: 1 or 2, 0, 0, 0"
+			echo ""
 			echo -n "    New RECEIVER boost value:	"
 			read BOOST_RCV
 			echo -n "    New BLUETOOTH boost value:	"

@@ -119,15 +119,6 @@ configure_from_kernel_version
 # mount /system so we will be able to use df, fat.format and asound.conf
 mount_ system
 
-# imoseyon - fix busybox if necessary
-if ! ls /system/xbin/busybox
-then
-	cp /sdcard/imoseyon/busybox /system/xbin/busybox
-	chown 0:0 /system/xbin/busybox
-	chmod 755 /system/xbin/busybox
-	/system/xbin/busybox --install -s /system/xbin
-fi
-
 # we will need these directories
 mkdir /cache 2> /dev/null
 mkdir /dbdata 2> /dev/null
