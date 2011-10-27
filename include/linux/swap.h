@@ -341,18 +341,15 @@ extern void __put_swap_token(struct mm_struct *);
 
 static inline int has_swap_token(struct mm_struct *mm)
 {
-	return (mm == swap_token_mm);
+	return false;
 }
 
 static inline void put_swap_token(struct mm_struct *mm)
 {
-	if (has_swap_token(mm))
-		__put_swap_token(mm);
 }
 
 static inline void disable_swap_token(void)
 {
-	put_swap_token(swap_token_mm);
 }
 
 #ifdef CONFIG_CGROUP_MEM_RES_CTLR
