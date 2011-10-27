@@ -6,7 +6,7 @@ BOOST_RCV_PATH=/sys/devices/virtual/misc/voodoo_sound/incall_boost_rcv
 BOOST_BT_PATH=/sys/devices/virtual/misc/voodoo_sound/incall_boost_bt
 BOOST_SPK_PATH=/sys/devices/virtual/misc/voodoo_sound/incall_boost_spk
 BOOST_HP_PATH=/sys/devices/virtual/misc/voodoo_sound/incall_boost_hp
-INITSCRIPT_PATH=/system/etc/init.d/91incall_boost
+INITSCRIPT_PATH=/system/etc/init.d/91callboost
 
 show_options()
 {
@@ -18,6 +18,8 @@ echo "            Install boot script"
 echo "  disable   Remove boot script"
 echo "            Reset boost settings to defaults"
 echo "  show      Show current status"
+echo ""
+echo "Example: callboost show"
 echo ""
 }
 
@@ -34,17 +36,18 @@ echo ""
 
 write_initscript()
 {
-echo "#!/system/bin/sh" > $INITSCRIPT_PATH
+echo "#!/system/bin/sh" > $5
 echo "if  [ -e $BOOST_RCV_PATH ] &&
     [ -e $BOOST_BT_PATH ] &&
     [ -e $BOOST_SPK_PATH ] &&
-    [ -e $BOOST_HP_PATH ]; then" >> $INITSCRIPT_PATH
-echo "echo $1 > $BOOST_RCV_PATH" >> $INITSCRIPT_PATH
-echo "echo $2 > $BOOST_BT_PATH" >> $INITSCRIPT_PATH
-echo "echo $3 > $BOOST_SPK_PATH" >> $INITSCRIPT_PATH
-echo "echo $4 > $BOOST_HP_PATH" >> $INITSCRIPT_PATH
-chmod 755 $INITSCRIPT_PATH
-echo "fi" >> $INITSCRIPT_PATH
+    [ -e $BOOST_HP_PATH ]; then" >> $5
+echo "echo $1 > $BOOST_RCV_PATH" >> $5
+echo "echo $2 > $BOOST_BT_PATH" >> $5
+echo "echo $3 > $BOOST_SPK_PATH" >> $5
+echo "echo $4 > $BOOST_HP_PATH" >> $5
+echo "fi" >> $5
+chown 0:0 $5
+chmod 755 $5
 }
 
 mount_system_rw()
@@ -58,14 +61,11 @@ mount -o ro,remount /system /system
 }
 
 if  [ -e $BOOST_RCV_PATH ] && [ -e $BOOST_BT_PATH ] && [ -e $BOOST_SPK_PATH ] && [ -e $BOOST_HP_PATH ]; then
-
 	BOOST_RCV=`cat $BOOST_RCV_PATH`
 	BOOST_BT=`cat $BOOST_BT_PATH`
 	BOOST_SPK=`cat $BOOST_SPK_PATH`
 	BOOST_HP=`cat $BOOST_HP_PATH`
-
 	if [ $1 ]; then
-
 		if [ $1 == "enable" ]; then
 			show_status
 
@@ -82,7 +82,7 @@ if  [ -e $BOOST_RCV_PATH ] && [ -e $BOOST_BT_PATH ] && [ -e $BOOST_SPK_PATH ] &&
 			echo ""
 
 			mount_system_rw
-			write_initscript $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP
+			write_initscript $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP $INITSCRIPT_PATH
 			mount_system_ro
 			echo "Boot script installed."
 
