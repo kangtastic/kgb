@@ -11,7 +11,7 @@ TIME=$(date +%H%M)
 KERNEL_VERSION="TKSGB Kernel for Samsung SCH-I500. Buildcode: $DATE.$TIME"
 
 # Toolchain paths
-TOOLCHAIN=/home/vb/toolchain/arm-2009q3/bin
+TOOLCHAIN=/home/vb/toolchain/arm-2011.03/bin
 TOOLCHAIN_PREFIX=arm-none-linux-gnueabi-
 STRIP=${TOOLCHAIN}/${TOOLCHAIN_PREFIX}strip
 
