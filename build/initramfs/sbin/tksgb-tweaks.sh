@@ -1,31 +1,21 @@
 #!/system/bin/sh
 
-# Remount /system rw
+# Remount rootfs and /system rw
 busybox mount -t rootfs -o remount,rw rootfs
-busybox mount -o remount,rw /system
-
-# Install liblights
-MD5SUM1=`busybox md5sum /system/lib/hw/lights.s5pc110.so | awk '{ print \$1 }'`
-MD5SUM2=`busybox md5sum /res/lib/lights.s5pc110.so | awk '{ print \$1 }'`
-if [ ! "$MD5SUM1" = "$MD5SUM2" ]; then
-	busybox cp /system/lib/hw/lights.s5pc110.so /system/lib/hw/lights.s5pc110.so.old
-	busybox cp -f /res/lib/lights.s5pc110.so /system/lib/hw/lights.s5pc110.so
-	busybox chown root.root /system/lib/hw/lights.s5pc110.so
-	busybox chmod 0644 /system/lib/hw/lights.s5pc110.so
-fi
+busybox mount -o rw,remount /system
 
 # Install bootanimation binary
-MD5SUM1=`busybox md5sum /system/bin/bootanimation | awk '{ print \$1 }'`
-MD5SUM2=`busybox md5sum /res/lib/bootanimation | awk '{ print \$1 }'`
-if [ ! "$MD5SUM1" = "$MD5SUM2" ]; then
-	busybox cp -f /res/lib/bootanimation /system/bin/bootanimation
-	busybox chown root.shell /system/bin/bootanimation
-	busybox chmod 0755 /system/bin/bootanimation
+REFBANIM=/res/lib/bootanimation
+SYSBANIM=/system/bin/bootanimation
+if ! cmp $REFBANIM $SYSBANIM; then
+	cat $REFBANIM > $SYSBANIM
+	chown 0.2000 $SYSBANIM
+	chmod 755 $SYSBANIM
 fi
 
-# Fix up resolv.conf with multicasted Verizon and Google DNS
-if [ ! -f "/system/etc/resolv.conf" ]; then
-	echo "nameserver 4.2.2.4" >> /system/etc/resolv.conf
+# If necessary create resolv.conf with multicasted Verizon and Google DNS
+if [ ! -f /system/etc/resolv.conf ]; then
+	echo "nameserver 4.2.2.4" > /system/etc/resolv.conf
 	echo "nameserver 8.8.4.4" >> /system/etc/resolv.conf
 fi
 sync
@@ -34,6 +24,9 @@ sync
 if [ -e /sys/devices/virtual/bdi/179:0/read_ahead_kb ]; then
 	echo "1024" > /sys/devices/virtual/bdi/179:0/read_ahead_kb
 fi
+
+# Enable deep idle in sysfs
+	echo "1" > /sys/class/misc/deepidle/enabled
 
 # Bootanimation hack
 while [ 1 ]; do
@@ -45,5 +38,10 @@ while [ 1 ]; do
 		exit;
 	fi
 done
+
+# Add a little helper for "busybox ls -al"
+if [ ! -x /system/xbin/ll ]; then
+echo "busybox ls -al $*" > /system/xbin/ll
+chmod 777 /system/xbin/ll
 
 busybox mount -o remount,ro /system
