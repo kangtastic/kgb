@@ -74,8 +74,10 @@ static int
 task_notify_func(struct notifier_block *self, unsigned long val, void *data)
 {
 	struct task_struct *task = data;
+
 	if (task == lowmem_deathpending)
 		lowmem_deathpending = NULL;
+
 	return NOTIFY_OK;
 }
 
@@ -91,15 +93,13 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 	int selected_oom_adj;
 	int array_size = ARRAY_SIZE(lowmem_adj);
 	int other_free = global_page_state(NR_FREE_PAGES);
-	//int other_file = global_page_state(NR_FILE_PAGES);
-
-	#ifdef SEC_ADJUST_LMK
-		int other_file = global_page_state(NR_INACTIVE_FILE) +
-							global_page_state(NR_ACTIVE_FILE);
-	#else
-		int other_file = global_page_state(NR_FILE_PAGES) -
-							global_page_state(NR_SHMEM);
-	#endif
+#ifdef SEC_ADJUST_LMK
+	int other_file = global_page_state(NR_INACTIVE_FILE) +
+						global_page_state(NR_ACTIVE_FILE);
+#else
+	int other_file = global_page_state(NR_FILE_PAGES) -
+						global_page_state(NR_SHMEM);
+#endif
 
 	/*
 	 * If we already have a death outstanding, then
@@ -128,7 +128,6 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 			break;
 		}
 	}
-
 #ifdef SEC_ADJUST_LMK
 	if (min_adj == OOM_ADJUST_MAX + 1)
 		return 0;
@@ -189,6 +188,12 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 			     p->pid, p->comm, oom_adj, tasksize);
 	}
 	if (selected) {
+		if (fatal_signal_pending(selected)) {
+			pr_warning("process %d is suffering a slow death\n",
+				   selected->pid);
+			read_unlock(&tasklist_lock);
+			return rem;
+		}
 		lowmem_print(1, "send sigkill to %d (%s), adj %d, size %d\n",
 			     selected->pid, selected->comm,
 			     selected_oom_adj, selected_tasksize);
