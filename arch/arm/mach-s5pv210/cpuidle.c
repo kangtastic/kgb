@@ -29,7 +29,6 @@
 #ifdef CONFIG_CPU_DIDLE
 #include <linux/dma-mapping.h>
 #include <linux/deep_idle.h>
-#include <linux/notifier.h>
 
 #include <plat/regs-otg.h>
 #include <mach/cpuidle.h>
@@ -37,7 +36,6 @@
 
 extern bool suspend_ongoing(void);
 extern bool bt_is_running(void);
-extern int pm_notifier_call_chain(unsigned long val);
 extern bool gps_is_running(void);
 
 /*
@@ -145,6 +143,15 @@ static int check_power_clock_gating(void)
 
 	/* check power gating */
 	val = __raw_readl(S5P_NORMAL_CFG);
+/* Debug code
+	printk(KERN_INFO "%s: S5PV210_PD_LCD=%u, S5PV210_PD_CAM=%u, S5PV210_PD_TV=%u, S5PV210_PD_MFC=%u, S5PV210_PD_G3D=%u\n",
+		__func__,
+		!!(val & S5PV210_PD_LCD),
+		!!(val & S5PV210_PD_CAM),
+		!!(val & S5PV210_PD_TV),
+		!!(val & S5PV210_PD_MFC),
+		!!(val & S5PV210_PD_G3D));
+*/
 	if (val & (S5PV210_PD_LCD | S5PV210_PD_CAM | S5PV210_PD_TV
 				  | S5PV210_PD_MFC | S5PV210_PD_G3D))
 		return 1;
@@ -227,8 +234,6 @@ static void s5p_enter_didle(bool top_on)
 {
 	unsigned long tmp;
 	unsigned long save_eint_mask;
-
-	pm_notifier_call_chain(PM_SUSPEND_PREPARE);
 
 	/* store the physical address of the register recovery block */
 	__raw_writel(phy_regs_save, S5P_INFORM2);
@@ -346,8 +351,6 @@ skipped_didle:
 	__raw_writel(vic_regs[1], S5P_VIC1REG(VIC_INT_ENABLE));
 	__raw_writel(vic_regs[2], S5P_VIC2REG(VIC_INT_ENABLE));
 	__raw_writel(vic_regs[3], S5P_VIC3REG(VIC_INT_ENABLE));
-
-	pm_notifier_call_chain(PM_POST_SUSPEND);
 }
 #endif
 
@@ -510,4 +513,3 @@ err:
 }
 
 device_initcall(s5p_init_cpuidle);
-
