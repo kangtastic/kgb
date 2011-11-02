@@ -2,6 +2,7 @@
  * arch/arm/mach-s5pv210/cpuidle.c
  *
  * Copyright (c) Samsung Electronics Co. Ltd
+ *           (c) 2011 Ezekeel <notezekeel@googlemail.com>
  *
  * CPU idle driver for S5PV210
  *
@@ -14,7 +15,6 @@
 #include <linux/init.h>
 #include <linux/platform_device.h>
 #include <linux/cpuidle.h>
-#include <linux/dma-mapping.h>
 #include <linux/io.h>
 #include <asm/proc-fns.h>
 #include <asm/cacheflush.h>
@@ -23,11 +23,22 @@
 #include <mach/regs-irq.h>
 #include <mach/regs-clock.h>
 #include <mach/regs-gpio.h>
+#include <plat/pm.h>
+#include <plat/devs.h>
+
+#ifdef CONFIG_CPU_DIDLE
+#include <linux/dma-mapping.h>
+#include <linux/deep_idle.h>
+#include <linux/notifier.h>
+
 #include <plat/regs-otg.h>
 #include <mach/cpuidle.h>
 #include <mach/power-domain.h>
-#include <plat/pm.h>
-#include <plat/devs.h>
+
+extern bool suspend_ongoing(void);
+extern bool bt_is_running(void);
+extern int pm_notifier_call_chain(unsigned long val);
+extern bool gps_is_running(void);
 
 /*
  * For saving & restoring VIC register before entering
@@ -125,9 +136,7 @@ static int check_usbotg_op(void)
  * Check power gating : LCD, CAM, TV, MFC, G3D
  * Check clock gating : DMA, USBHOST, I2C
  */
-#ifdef CONFIG_SND_S5P_RP
 extern volatile int s5p_rp_is_running;
-#endif
 extern int s5p_rp_get_op_level(void);
 
 static int check_power_clock_gating(void)
@@ -139,10 +148,7 @@ static int check_power_clock_gating(void)
 	if (val & (S5PV210_PD_LCD | S5PV210_PD_CAM | S5PV210_PD_TV
 				  | S5PV210_PD_MFC | S5PV210_PD_G3D))
 		return 1;
-#ifdef CONFIG_S5P_INTERNAL_DMA
-	if (!(val & S5PV210_PD_AUDIO))
-		return 1;
-#endif
+
 #ifdef CONFIG_SND_S5P_RP
 	if (s5p_rp_get_op_level())
 		return 1;
@@ -217,45 +223,12 @@ static void s5p_gpio_pdn_conf(void)
 	} while (gpio_base <= S5PV210_MP28_BASE);
 }
 
-static void s5p_enter_idle(void)
-{
-	unsigned long tmp;
-
-	tmp = __raw_readl(S5P_IDLE_CFG);
-	tmp &= ~((3U<<30) | (3<<28) | (1<<0));
-	tmp |= ((2U<<30) | (2<<28));
-	__raw_writel(tmp, S5P_IDLE_CFG);
-
-	tmp = __raw_readl(S5P_PWR_CFG);
-	tmp &= S5P_CFG_WFI_CLEAN;
-	__raw_writel(tmp, S5P_PWR_CFG);
-
-	cpu_do_idle();
-}
-
-/* Actual code that puts the SoC in different idle states */
-static int s5p_enter_idle_state(struct cpuidle_device *dev,
-				struct cpuidle_state *state)
-{
-	struct timeval before, after;
-	int idle_time;
-
-	local_irq_disable();
-	do_gettimeofday(&before);
-
-	s5p_enter_idle();
-
-	do_gettimeofday(&after);
-	local_irq_enable();
-	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
-			(after.tv_usec - before.tv_usec);
-	return idle_time;
-}
-
-static void s5p_enter_didle(void)
+static void s5p_enter_didle(bool top_on)
 {
 	unsigned long tmp;
 	unsigned long save_eint_mask;
+
+	pm_notifier_call_chain(PM_SUSPEND_PREPARE);
 
 	/* store the physical address of the register recovery block */
 	__raw_writel(phy_regs_save, S5P_INFORM2);
@@ -275,10 +248,21 @@ static void s5p_enter_didle(void)
 	__raw_writel(0xffffffff, S5P_VIC2REG(VIC_INT_ENABLE_CLEAR));
 	__raw_writel(0xffffffff, S5P_VIC3REG(VIC_INT_ENABLE_CLEAR));
 
-	/* GPIO Power Down Control */
-	s5p_gpio_pdn_conf();
+	if (!top_on) {
+	    /* GPIO Power Down Control */
+	    s5p_gpio_pdn_conf();
+	}
+
+	/*
+	 * Configure external interrupt wakeup mask
+	 * We use the same wakeup mask as for sleep state plus make sure 
+	 * that at least XEINT[22] = GPH2[6] = GPIO_nPOWER = GPIO_N_POWER
+	 * and XEINT[29] = GPH3[5] = GPIO_OK_KEY are enabled
+	 */
 	save_eint_mask = __raw_readl(S5P_EINT_WAKEUP_MASK);
-	__raw_writel(0xDFBFFFFF, S5P_EINT_WAKEUP_MASK);
+	tmp = s3c_irqwake_eintmask;
+	tmp &= ~((1<<22) | (1<<29));
+	__raw_writel(tmp, S5P_EINT_WAKEUP_MASK);
 
 	/* Clear wakeup status register */
 	tmp = __raw_readl(S5P_WAKEUP_STAT);
@@ -286,10 +270,11 @@ static void s5p_enter_didle(void)
 
 	/*
 	 * Wakeup source configuration for didle
-	 * RTC TICK and I2S are enabled as wakeup sources
+	 * We use the same wakeup mask as for sleep state plus make
+	 * sure that at least RTC TICK and I2S are enabled as wakeup 
+	 * sources
 	 */
-	tmp = __raw_readl(S5P_WAKEUP_MASK);
-	tmp |= 0xffff;
+	tmp = s3c_irqwake_intmask;
 	tmp &= ~((1<<2) | (1<<13));
 	__raw_writel(tmp, S5P_WAKEUP_MASK);
 
@@ -301,7 +286,11 @@ static void s5p_enter_didle(void)
 	 */
 	tmp = __raw_readl(S5P_IDLE_CFG);
 	tmp &= ~(0x3fU << 26);
-	tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
+	if (top_on) {
+	    tmp |= ((2<<30) | (2<<28) | (1<<26) | (1<<0));
+	} else {
+	    tmp |= ((1<<30) | (1<<28) | (1<<26) | (1<<0));
+	}
 	__raw_writel(tmp, S5P_IDLE_CFG);
 
 	/* Power mode Config setting */
@@ -316,10 +305,6 @@ static void s5p_enter_didle(void)
 	    (__raw_readl(S5P_VIC2REG(VIC_RAW_STATUS)) & vic_regs[2]) |
 	    (__raw_readl(S5P_VIC3REG(VIC_RAW_STATUS)) & vic_regs[3]))
 		goto skipped_didle;
-
-
-	/* APLL_LOCK : 0x2cf a 30us */
-	__raw_writel(0x2cf, S5P_APLL_LOCK);
 
 	/* SYSCON_INT_DISABLE */
 	tmp = __raw_readl(S5P_OTHERS);
@@ -349,60 +334,78 @@ skipped_didle:
 	tmp &= S5P_CFG_WFI_CLEAN;
 	__raw_writel(tmp, S5P_PWR_CFG);
 
-	/* Release retention GPIO/CF/MMC/UART IO */
-	tmp = __raw_readl(S5P_OTHERS);
-	tmp |= (S5P_OTHERS_RET_IO | S5P_OTHERS_RET_CF |\
-		S5P_OTHERS_RET_MMC | S5P_OTHERS_RET_UART);
-	__raw_writel(tmp, S5P_OTHERS);
+	if (!top_on) {
+	    /* Release retention GPIO/CF/MMC/UART IO */
+	    tmp = __raw_readl(S5P_OTHERS);
+	    tmp |= (S5P_OTHERS_RET_IO | S5P_OTHERS_RET_CF |	\
+		    S5P_OTHERS_RET_MMC | S5P_OTHERS_RET_UART);
+	    __raw_writel(tmp, S5P_OTHERS);
+	}
 
 	__raw_writel(vic_regs[0], S5P_VIC0REG(VIC_INT_ENABLE));
 	__raw_writel(vic_regs[1], S5P_VIC1REG(VIC_INT_ENABLE));
 	__raw_writel(vic_regs[2], S5P_VIC2REG(VIC_INT_ENABLE));
 	__raw_writel(vic_regs[3], S5P_VIC3REG(VIC_INT_ENABLE));
-}
 
-static int s5p_idle_bm_check(void)
-{
-	if (check_power_clock_gating()	|| loop_sdmmc_check() ||
-	    check_usbotg_op()		|| check_rtcint())
-		return 1;
-#ifdef CONFIG_S5P_INTERNAL_DMA
-	else if (check_idmapos())
-		return 1;
+	pm_notifier_call_chain(PM_POST_SUSPEND);
+}
 #endif
-	else
-		return 0;
+
+static void s5p_enter_idle(void)
+{
+	unsigned long tmp;
+
+	tmp = __raw_readl(S5P_IDLE_CFG);
+	tmp &= ~((3U<<30)|(3<<28)|(1<<0));
+	tmp |= ((2U<<30)|(2<<28));
+	__raw_writel(tmp, S5P_IDLE_CFG);
+
+	tmp = __raw_readl(S5P_PWR_CFG);
+	tmp &= S5P_CFG_WFI_CLEAN;
+	__raw_writel(tmp, S5P_PWR_CFG);
+
+	cpu_do_idle();
 }
 
 /* Actual code that puts the SoC in different idle states */
-static int s5p_enter_didle_state(struct cpuidle_device *dev,
+static int s5p_enter_idle_state(struct cpuidle_device *dev,
 				struct cpuidle_state *state)
 {
 	struct timeval before, after;
 	int idle_time;
+#ifdef CONFIG_CPU_DIDLE
+	int idle_state = 0;
+#endif
 
 	local_irq_disable();
 	do_gettimeofday(&before);
 
-	s5p_enter_didle();
+#ifdef CONFIG_CPU_DIDLE
+#ifdef CONFIG_S5P_INTERNAL_DMA
+	if (!deepidle_is_enabled() || check_power_clock_gating() || suspend_ongoing() || loop_sdmmc_check() || check_usbotg_op() || check_rtcint() || check_idmapos()) {
+#else
+	if (!deepidle_is_enabled() || check_power_clock_gating() || suspend_ongoing() || loop_sdmmc_check() || check_usbotg_op() || check_rtcint()) {
+#endif
+	    s5p_enter_idle();
+	} else if (bt_is_running() || gps_is_running()) {
+	    s5p_enter_didle(true);
+	    idle_state = 1;
+	} else {
+	    s5p_enter_didle(false);
+	    idle_state = 2;
+	}
+#else   
+	s5p_enter_idle();
+#endif
+
 	do_gettimeofday(&after);
 	local_irq_enable();
 	idle_time = (after.tv_sec - before.tv_sec) * USEC_PER_SEC +
-			(after.tv_usec - before.tv_usec);
-	return idle_time;
-}
-
-static int s5p_enter_idle_bm(struct cpuidle_device *dev,
-				struct cpuidle_state *state)
-{
+	    (after.tv_usec - before.tv_usec);
 #ifdef CONFIG_CPU_DIDLE
-	if (s5p_idle_bm_check())
-		return s5p_enter_idle_state(dev, state);
-	else
-		return s5p_enter_didle_state(dev, state);
-#else
-	return s5p_enter_idle_state(dev, state);
+	report_idle_time(idle_state, idle_time);
 #endif
+	return idle_time;
 }
 
 static DEFINE_PER_CPU(struct cpuidle_device, s5p_cpuidle_device);
@@ -416,10 +419,13 @@ static struct cpuidle_driver s5p_idle_driver = {
 static int s5p_init_cpuidle(void)
 {
 	struct cpuidle_device *device;
-	struct platform_device *pdev;
-	struct resource *res;
-	int i = 0;
 	int ret;
+
+#ifdef CONFIG_CPU_DIDLE
+	struct resource *res;
+	struct platform_device *pdev;
+	int i = 0;
+#endif
 
 	ret = cpuidle_register_driver(&s5p_idle_driver);
 	if (ret) {
@@ -431,12 +437,17 @@ static int s5p_init_cpuidle(void)
 	device->state_count = 1;
 
 	/* Wait for interrupt state */
-	device->states[0].enter = s5p_enter_idle_bm;
+	device->states[0].enter = s5p_enter_idle_state;
 	device->states[0].exit_latency = 1;	/* uS */
 	device->states[0].target_residency = 10000;
 	device->states[0].flags = CPUIDLE_FLAG_TIME_VALID;
+#ifdef CONFIG_CPU_DIDLE
+	strcpy(device->states[0].name, "(DEEP)IDLE");
+	strcpy(device->states[0].desc, "ARM clock/power gating - WFI");
+#else
 	strcpy(device->states[0].name, "IDLE");
 	strcpy(device->states[0].desc, "ARM clock gating - WFI");
+#endif
 
 	ret = cpuidle_register_device(device);
 	if (ret) {
@@ -444,6 +455,7 @@ static int s5p_init_cpuidle(void)
 		goto err_register_driver;
 	}
 
+#ifdef CONFIG_CPU_DIDLE
 	regs_save = dma_alloc_coherent(NULL, 4096, &phy_regs_save, GFP_KERNEL);
 	if (regs_save == NULL) {
 		printk(KERN_ERR "%s: DMA alloc error\n", __func__);
@@ -477,9 +489,11 @@ static int s5p_init_cpuidle(void)
 			goto err_resource;
 		}
 	}
+#endif
 
 	return 0;
 
+#ifdef CONFIG_CPU_DIDLE
 err_alloc:
 	while (--i >= 0) {
 		iounmap(chk_dev_op[i].base);
@@ -488,6 +502,7 @@ err_resource:
 	dma_free_coherent(NULL, 4096, regs_save, phy_regs_save);
 err_register_device:
 	cpuidle_unregister_device(device);
+#endif
 err_register_driver:
 	cpuidle_unregister_driver(&s5p_idle_driver);
 err:
@@ -495,3 +510,4 @@ err:
 }
 
 device_initcall(s5p_init_cpuidle);
+

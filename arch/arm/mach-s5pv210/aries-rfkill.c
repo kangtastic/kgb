@@ -37,8 +37,8 @@
 #include <plat/irqs.h>
 #include "aries.h"
 #define BT_SLEEP_ENABLER
-	
-#ifdef CONFIG_DVFS_LIMIT	
+
+#ifdef CONFIG_DVFS_LIMIT
 #define USE_LOCK_DVFS
 #endif	
 
@@ -68,6 +68,16 @@ static struct rfkill *bt_sleep_rfk;
 
 static struct rfkill *bt_rfk;
 static const char bt_name[] = "bcm4329";
+
+#ifdef CONFIG_CPU_DIDLE
+static bool bt_running = false;
+bool bt_is_running(void)
+{
+	return bt_running;
+}
+EXPORT_SYMBOL(bt_is_running);
+#endif
+
 #ifdef USE_LOCK_DVFS
 static struct rfkill *bt_lock_dvfs_rfk;
 static struct rfkill *bt_lock_dvfs_l2_rfk;
@@ -143,6 +153,10 @@ static int bluetooth_set_power(void *data, enum rfkill_user_states state)
 	case RFKILL_USER_STATE_SOFT_BLOCKED:
 		pr_debug("[BT] Device Powering OFF\n");
 
+#ifdef CONFIG_CPU_DIDLE
+	bt_running = false;
+#endif
+
 		ret = disable_irq_wake(irq);
 		if (ret < 0)
 			pr_err("[BT] unset wakeup src failed\n");
@@ -187,6 +201,10 @@ static int bluetooth_set_power(void *data, enum rfkill_user_states state)
 irqreturn_t bt_host_wake_irq_handler(int irq, void *dev_id)
 {
 	pr_debug("[BT] bt_host_wake_irq_handler start\n");
+
+#ifdef CONFIG_CPU_DIDLE
+	bt_running=true;
+#endif
 
 	wake_lock_timeout(&rfkill_wake_lock, 5*HZ);
 

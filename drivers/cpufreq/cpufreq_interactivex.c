@@ -322,8 +322,9 @@ static int cpufreq_governor_interactivex(struct cpufreq_policy *new_policy,
 		policy = new_policy;
 		enabled = 1;
 
-		register_early_suspend(&interactivex_power_suspend);
-		pr_info("[imoseyon] interactiveX start - freq_threshold at %d, resume at %d\n", freq_threshold, resume_speed);
+		// Changes for deep idle
+		// register_early_suspend(&interactivex_power_suspend);
+		// pr_info("[imoseyon] interactiveX start - freq_threshold at %d, resume at %d\n", freq_threshold, resume_speed);
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -336,8 +337,9 @@ static int cpufreq_governor_interactivex(struct cpufreq_policy *new_policy,
 		pm_idle = pm_idle_old;
 		del_timer(&per_cpu(cpu_timer, new_policy->cpu));
 		enabled = 0;
-		unregister_early_suspend(&interactivex_power_suspend);
-		pr_info("[imoseyon] interactiveX inactive\n");
+		// Changes for deep idle
+		// unregister_early_suspend(&interactivex_power_suspend);
+		// pr_info("[imoseyon] interactiveX inactive\n");
 			break;
 
 	case CPUFREQ_GOV_LIMITS:
