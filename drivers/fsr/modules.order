@@ -1,0 +1,2 @@
+kernel/drivers/fsr/fsr.ko
+kernel/drivers/fsr/fsr_stl.ko
