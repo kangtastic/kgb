@@ -94,10 +94,25 @@ make CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX clean mrproper
 echo_msg "CONFIGURING KERNEL AND GENERATING INITRAMFS"
 make ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX tksgb_defconfig
 
-# Make, strip and copy modules to generated initramfs
-make ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX modules
+# Extract prebuilt ramdisks
 probe_mkdir $WORKDIR
-cp -r $BUILDDIR/initramfs $WORKDIR/
+
+probe_mkdir $WORKDIR/initramfs
+cp $BUILDDIR/initramfs/initramfs-tksgb.tar.xz $WORKDIR/initramfs/
+pushd $WORKDIR/initramfs > /dev/null 2>&1
+tar -Jxf initramfs-tksgb.tar.xz > /dev/null 2>&1
+rm initramfs-tksgb.tar.xz > /dev/null 2>&1
+popd > /dev/null 2>&1
+
+probe_mkdir $WORKDIR/initramfs-EH09
+cp $BUILDDIR/initramfs/initramfs-EH09.tar.xz $WORKDIR/initramfs-EH09/
+pushd $WORKDIR/initramfs-EH09 > /dev/null 2>&1
+tar -Jxf $WORKDIR/initramfs-EH09/initramfs-EH09.tar.xz > /dev/null 2>&1
+rm $WORKDIR/initramfs-EH09/initramfs-EH09.tar.xz > /dev/null 2>&1
+pushd > /dev/null 2>&1
+
+# Make modules, strip and copy to generated initramfs
+make ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX modules
 for line in `cat modules.order`
 do
 	echo ${line:7}
@@ -105,10 +120,10 @@ do
 	$STRIP --strip-debug $WORKDIR/initramfs/lib/modules/$(basename $line)
 done
 
-# Replace built OneNAND driver with stock Samsung EH09 modules
+# Replace source-built OneNAND driver with stock Samsung EH09 modules
 # Might work better although no real evidence so far, still testing
-cp -f $BUILDDIR/initramfs-EH09/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
-cp -f $BUILDDIR/initramfs-EH09/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
+cp -f $WORKDIR/initramfs-EH09/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
+cp -f $WORKDIR/initramfs-EH09/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
 rm $WORKDIR/initramfs/lib/modules/hotspot_event_monitoring.ko
 
 # Write kernel version tag
@@ -130,7 +145,7 @@ probe_mkdir $OUTDIR
 
 makezip "TKSGB-I500-$DATE.$TIME"
 
-# Second Odin package is for releases, renamed .tar.md5 files fail verification
+# Second Odin package is for releases, because renamed .tar.md5 files fail verification
 makeodin "TKSGB-I500-$DATE.$TIME"
 makeodin "TKSGB-I500-$DATE"
 

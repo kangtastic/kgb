@@ -1,6 +1,0 @@
-on boot
-	start formatter
-
-service formatter /voodoo/scripts/rfs_formatter.sh
-	oneshot
-
