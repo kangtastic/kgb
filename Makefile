@@ -189,7 +189,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-CROSS_COMPILE	?= /home/vb/toolchain/arm-2009q3/bin/arm-none-linux-gnueabi-
+CROSS_COMPILE	?= /home/vb/toolchain/arm-2011.03/bin/arm-none-linux-gnueabi-
 
 
 # Architecture as present in compile.h
@@ -355,11 +355,11 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
 		   -mthumb-interwork -mthumb \
-		   -mtune=cortex-a8 \
+		   -march=armv7-a -mcpu=cortex-a8 -mtune=cortex-a8 \
 		   -mfpu=neon -mfloat-abi=softfp -ftree-vectorize \
 		   --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 \
 		   -fsched-spec-load-dangerous -fpredictive-commoning \
-		   -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
+		   -fira-coalesce -funswitch-loops -fipa-cp-clone
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
