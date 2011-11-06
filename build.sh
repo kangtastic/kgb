@@ -30,9 +30,9 @@ KERNEL_IMAGE=$ROOTDIR/arch/arm/boot/zImage
 echo_msg()
 # $1: Message to print to output
 {
-echo ""
-echo "*** $1 ***"
-echo ""
+echo "
+*** $1 ***
+"
 }
 
 probe_rmdir()
@@ -90,10 +90,11 @@ probe_rmdir $WORKDIR
 probe_rmdir $OUTDIR
 make CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX clean mrproper
 
-# Generate config, build & copy modules, write kernel version tag
+# Generate config
 echo_msg "CONFIGURING KERNEL AND GENERATING INITRAMFS"
 make ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX tksgb_defconfig
 
+# Make, strip and copy modules to generated initramfs
 make ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX modules
 probe_mkdir $WORKDIR
 cp -r $BUILDDIR/initramfs $WORKDIR/
@@ -104,11 +105,13 @@ do
 	$STRIP --strip-debug $WORKDIR/initramfs/lib/modules/$(basename $line)
 done
 
-# Replace/remove some modules
-cp -f $BUILDDIR/initramfs-stock/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
-cp -f $BUILDDIR/initramfs-stock/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
+# Replace built OneNAND driver with stock Samsung EH09 modules
+# Might work better although no real evidence so far, still testing
+cp -f $BUILDDIR/initramfs-EH09/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
+cp -f $BUILDDIR/initramfs-EH09/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
 rm $WORKDIR/initramfs/lib/modules/hotspot_event_monitoring.ko
 
+# Write kernel version tag
 echo $KERNEL_VERSION > $WORKDIR/initramfs/kernel_version
 
 # Make kernel
@@ -124,7 +127,10 @@ cp $KERNEL_IMAGE $WORKDIR/update-zip/kernel_update/zImage
 cp $KERNEL_IMAGE $WORKDIR/zImage
 
 probe_mkdir $OUTDIR
+
 makezip "TKSGB-I500-$DATE.$TIME"
+
+# Second Odin package is for releases, renamed .tar.md5 files fail verification
 makeodin "TKSGB-I500-$DATE.$TIME"
 makeodin "TKSGB-I500-$DATE"
 
