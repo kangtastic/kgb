@@ -75,7 +75,7 @@ while test $sdcard_is_mounted = 0 && test $mount_attemps -gt 0; do
 		sdcard_dev=/dev/block/mmcblk0p1	# every other Galaxy S
 	fi
 
-	# repair_sdcard_vfat
+	repair_sdcard_vfat
 	mount -t vfat -o utf8,errors=continue $sdcard_dev /sdcard && sdcard_is_mounted=1 || wait=1
 
 	mount_attemps=$(( $mount_attemps - 1 ))
