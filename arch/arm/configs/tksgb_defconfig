@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Sun Nov  6 04:45:09 2011
+# Tue Nov  8 00:15:20 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -756,11 +756,12 @@ CONFIG_NET_SCHED=y
 # Queueing/Scheduling
 #
 # CONFIG_NET_SCH_CBQ is not set
-CONFIG_NET_SCH_HTB=y
+# CONFIG_NET_SCH_HTB is not set
 # CONFIG_NET_SCH_HFSC is not set
 # CONFIG_NET_SCH_PRIO is not set
 # CONFIG_NET_SCH_MULTIQ is not set
 # CONFIG_NET_SCH_RED is not set
+CONFIG_NET_SCH_SFB=y
 # CONFIG_NET_SCH_SFQ is not set
 # CONFIG_NET_SCH_TEQL is not set
 # CONFIG_NET_SCH_TBF is not set
