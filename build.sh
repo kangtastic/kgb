@@ -99,8 +99,8 @@ done
 
 # Replace source-built OneNAND driver with stock Samsung EH09 modules
 # Seems to work better although no real evidence so far, still testing
-cp -f $BUILDDIR/initramfs-EH09/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
-cp -f $BUILDDIR/initramfs-EH09/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
+cp -f $BUILDDIR/initramfs-EI20/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
+cp -f $BUILDDIR/initramfs-EI20/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
 
 # Remove unwanted initramfs files
 rm -f $WORKDIR/initramfs/lib/modules/hotspot_event_monitoring.ko
