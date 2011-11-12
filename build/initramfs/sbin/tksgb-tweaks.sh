@@ -44,4 +44,7 @@ if [ ! -x /system/xbin/ll ]; then
 echo "busybox ls -al $*" > /system/xbin/ll
 chmod 777 /system/xbin/ll
 
+# Create /etc/init.d if necessary for callboost/zram scripts
+mkdir -p /system/etc/init.d
+
 busybox mount -o remount,ro /system

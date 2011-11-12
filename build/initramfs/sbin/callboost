@@ -34,7 +34,7 @@ Displaying current settings:
 }
 
 boost_probe() {
-test -f $BOOST_RCV_PATH && test -e $BOOST_BT_PATH && test -e $BOOST_SPK_PATH && test -e $BOOST_HP_PATH
+test -f $BOOST_RCV_PATH && test -f $BOOST_BT_PATH && test -f $BOOST_SPK_PATH && test -f $BOOST_HP_PATH
 }
 
 initscript_probe() {
@@ -56,9 +56,6 @@ echo $4 > $BOOST_HP_PATH
 }
 
 write_initscript() {
-if [ ! -d /system/etc/init.d ]; then
-	mkdir /system/etc/init.d
-fi
 echo "#!/system/bin/sh
 if  [ -e $BOOST_RCV_PATH ] && [ -e $BOOST_BT_PATH ] && [ -e $BOOST_SPK_PATH ] && [ -e $BOOST_HP_PATH ]; then
 echo $BOOST_RCV > $BOOST_RCV_PATH

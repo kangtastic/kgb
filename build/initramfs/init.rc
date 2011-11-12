@@ -141,8 +141,6 @@ on fs
     #temp
     chown root root /sbin/fat.format
     chmod 750 /sbin/fat.format
-    
-    exec apply_disk_policy
 
     mkdir /data
 # SEC_DMCRYPT crypt flag added data
@@ -522,33 +520,30 @@ on boot
 
 # Define the oom_adj values for the classes of processes that can be
 # killed by the kernel.  These are used in ActivityManagerService.
-        setprop ro.FOREGROUND_APP_ADJ 0
-        setprop ro.VISIBLE_APP_ADJ 1
-        setprop ro.PERCEPTIBLE_APP_ADJ 1
-        setprop ro.HEAVY_WEIGHT_APP_ADJ 2
-        setprop ro.SECONDARY_SERVER_ADJ 2
-        setprop ro.BACKUP_APP_ADJ 2
-        setprop ro.HOME_APP_ADJ 4
-        setprop ro.HIDDEN_APP_MIN_ADJ 7
-        setprop ro.CONTENT_PROVIDER_ADJ 14
-        setprop ro.EMPTY_APP_ADJ 15
+    setprop ro.FOREGROUND_APP_ADJ 0
+    setprop ro.VISIBLE_APP_ADJ 1
+    setprop ro.PERCEPTIBLE_APP_ADJ 2
+    setprop ro.HEAVY_WEIGHT_APP_ADJ 3
+    setprop ro.SECONDARY_SERVER_ADJ 4
+    setprop ro.BACKUP_APP_ADJ 5
+    setprop ro.HOME_APP_ADJ 6
+    setprop ro.HIDDEN_APP_MIN_ADJ 7
+    setprop ro.EMPTY_APP_ADJ 15
 
 # to enable wifi
      setprop wifi.interface "eth0"
 
 # Define the memory thresholds at which the above process classes will
 # be killed.  These numbers are in pages (4k).
-        setprop ro.FOREGROUND_APP_MEM 1024
-        setprop ro.VISIBLE_APP_MEM 2048
-        setprop ro.PERCEPTIBLE_APP_MEM 4096
-        setprop ro.HEAVY_WEIGHT_APP_MEM 4096
-        setprop ro.SECONDARY_SERVER_MEM 6144
-        setprop ro.BACKUP_APP_MEM 6144
-        setprop ro.HOME_APP_MEM 6144
-        setprop ro.HIDDEN_APP_MEM 9216
-        setprop ro.CONTENT_PROVIDER_MEM 9216
-        setprop ro.EMPTY_APP_MEM 12288
-
+    setprop ro.FOREGROUND_APP_MEM 2048
+    setprop ro.VISIBLE_APP_MEM 3072
+    setprop ro.PERCEPTIBLE_APP_MEM 4096
+    setprop ro.HEAVY_WEIGHT_APP_MEM 4096
+    setprop ro.SECONDARY_SERVER_MEM 6144
+    setprop ro.BACKUP_APP_MEM 6144
+    setprop ro.HOME_APP_MEM 6144
+    setprop ro.HIDDEN_APP_MEM 7168
+    setprop ro.EMPTY_APP_MEM 8192
     
     setprop ro.bt.bdaddr_path "/data/misc/bluetooth/bt_addr"
 
@@ -556,20 +551,18 @@ on boot
 # Note that the driver only supports 6 slots, so we have combined some of
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first.
-    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,7,14,15
+    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,7,15
 
     write /proc/sys/vm/overcommit_memory 1
     write /proc/sys/vm/min_free_order_shift 4
-    write /sys/module/lowmemorykiller/parameters/minfree 1024,2048,4096,6144,9216,12288
+    write /sys/module/lowmemorykiller/parameters/minfree 2048,3072,4096,6144,7168,8192
 
     # Set init its forked children's oom_adj.
     write /proc/1/oom_adj -16
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 200
-    write /proc/sys/vm/dirty_background_ratio  35
-    write /proc/sys/vm/dirty_ratio  65
-    write /proc/sys/vm/vfs_cache_pressure  40
+    write /proc/sys/vm/dirty_background_ratio 5
 
     # Permissions for System Server and daemons.
     chown radio system /sys/android_power/state
@@ -729,6 +722,9 @@ service dhcpcd /system/bin/dhcpcd eth0
     disabled
     oneshot
 
+service iprenew_eth0 /system/bin/dhcpcd -n
+    disabled
+    oneshot
 
 service servicemanager /system/bin/servicemanager
     user system
