@@ -522,12 +522,13 @@ on boot
 # killed by the kernel.  These are used in ActivityManagerService.
     setprop ro.FOREGROUND_APP_ADJ 0
     setprop ro.VISIBLE_APP_ADJ 1
-    setprop ro.PERCEPTIBLE_APP_ADJ 2
-    setprop ro.HEAVY_WEIGHT_APP_ADJ 3
-    setprop ro.SECONDARY_SERVER_ADJ 4
-    setprop ro.BACKUP_APP_ADJ 5
-    setprop ro.HOME_APP_ADJ 6
+    setprop ro.PERCEPTIBLE_APP_ADJ 1
+    setprop ro.HEAVY_WEIGHT_APP_ADJ 2
+    setprop ro.SECONDARY_SERVER_ADJ 2
+    setprop ro.BACKUP_APP_ADJ 2
+    setprop ro.HOME_APP_ADJ 4
     setprop ro.HIDDEN_APP_MIN_ADJ 7
+    setprop ro.CONTENT_PROVIDER_MEM 14
     setprop ro.EMPTY_APP_ADJ 15
 
 # to enable wifi
@@ -535,15 +536,16 @@ on boot
 
 # Define the memory thresholds at which the above process classes will
 # be killed.  These numbers are in pages (4k).
-    setprop ro.FOREGROUND_APP_MEM 2048
-    setprop ro.VISIBLE_APP_MEM 3072
+    setprop ro.FOREGROUND_APP_MEM 2560
+    setprop ro.VISIBLE_APP_MEM 4096
     setprop ro.PERCEPTIBLE_APP_MEM 4096
     setprop ro.HEAVY_WEIGHT_APP_MEM 4096
     setprop ro.SECONDARY_SERVER_MEM 6144
     setprop ro.BACKUP_APP_MEM 6144
     setprop ro.HOME_APP_MEM 6144
-    setprop ro.HIDDEN_APP_MEM 7168
-    setprop ro.EMPTY_APP_MEM 8192
+    setprop ro.HIDDEN_APP_MEM 10240
+    setprop ro.CONTENT_PROVIDER_MEM 11264
+    setprop ro.EMPTY_APP_MEM 12288
     
     setprop ro.bt.bdaddr_path "/data/misc/bluetooth/bt_addr"
 
@@ -551,18 +553,18 @@ on boot
 # Note that the driver only supports 6 slots, so we have combined some of
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first.
-    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,4,7,15
+    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,7,14,15
 
     write /proc/sys/vm/overcommit_memory 1
     write /proc/sys/vm/min_free_order_shift 4
-    write /sys/module/lowmemorykiller/parameters/minfree 2048,3072,4096,6144,7168,8192
+    write /sys/module/lowmemorykiller/parameters/minfree 2560,4096,6144,10240,11264,12288
 
     # Set init its forked children's oom_adj.
     write /proc/1/oom_adj -16
 
     # Tweak background writeout
     write /proc/sys/vm/dirty_expire_centisecs 200
-    write /proc/sys/vm/dirty_background_ratio 5
+    write /proc/sys/vm/dirty_background_ratio  5
 
     # Permissions for System Server and daemons.
     chown radio system /sys/android_power/state
@@ -608,7 +610,7 @@ on boot
 # Define TCP buffer sizes for various networks
 #   ReadMin, ReadInitial, ReadMax, WriteMin, WriteInitial, WriteMax,
     setprop net.tcp.buffersize.default 4096,87380,110208,4096,16384,110208
-    setprop net.tcp.buffersize.wifi    4095,65535,196608,4096,16384,110208
+    setprop net.tcp.buffersize.wifi    4095,87380,110208,4096,16384,110208
     setprop net.tcp.buffersize.umts    4094,87380,110208,4096,16384,110208
     setprop net.tcp.buffersize.edge    4093,26280,35040,4096,16384,35040
     setprop net.tcp.buffersize.gprs    4092,8760,11680,4096,8760,11680
@@ -640,14 +642,17 @@ on boot
     chown bluetooth bluetooth /sys/class/rfkill/rfkill3/type
    
     chmod 6777 /system/bin/brcm_dutMode
+
+# Actually how about not doing that softap detection stuff?
+
 #[ATLAS] start Modify STA disconnect event detect method (polling -> event) by jkjeon
-    chown system system /system/bin/softap_event
-    chmod 4775 /system/bin/softap_event
+#    chown system system /system/bin/softap_event
+#    chmod 4775 /system/bin/softap_event
 #[ATLAS] end Modify STA disconnect event detect method (polling -> event) by jkjeon
 
-    mkdir /dev/hotspot_event_monitoring
-    chown system system /dev/hotspot_event_monitoring
-    chmod 0770 /dev/hotspot_event_monitoring
+#    mkdir /dev/hotspot_event_monitoring
+#    chown system system /dev/hotspot_event_monitoring
+#    chmod 0770 /dev/hotspot_event_monitoring
    
 # +++++++++++++++++++++++++++++++++++++++++++
 # for datarouter

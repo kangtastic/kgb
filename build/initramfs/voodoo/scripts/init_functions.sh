@@ -816,7 +816,7 @@ readd_boot_animation()
 {
 	echo >> init.rc
 	if test -f /data/local/bootanimation.zip || test -f /system/media/bootanimation.zip || test -f /system/media/sanim.zip; then
-		echo 'service bootanimation /system/bin/bootanimation
+		echo 'service playlogos1 /system/bin/bootanimation
 			user graphics
 			group graphics
 			oneshot' >> init.rc
