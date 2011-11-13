@@ -902,12 +902,14 @@ service gps-daemon /system/vendor/bin/gpsd
     user system
     group system inet
 
-# TKSGB tweaks. Fold things like sdcard readahead into here
-service tksgb-tweaks /sbin/tksgb-tweaks.sh
+# Preboot script for modifications to /system
+service preboot /sbin/preboot.sh
     user root
+    group root
     oneshot
 
 # enable init.d support
 service run_parts /system/xbin/run-parts /system/etc/init.d
     oneshot
 
+# Voodoo will add in the boot animation and postboot script sections upon boot

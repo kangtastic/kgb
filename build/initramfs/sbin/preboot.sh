@@ -1,10 +1,6 @@
-#!/system/bin/sh
-
-# Remount rootfs and /system rw
+#!/bin/sh
 busybox mount -t rootfs -o remount,rw rootfs
 busybox mount -o rw,remount /system
-
-	# Section 1: Tweaks in /system
 
 # Install bootanimation binary
 REFBANIM=/res/lib/bootanimation
@@ -37,42 +33,4 @@ if [ ! -x /system/xbin/ll ]; then
 echo "busybox ls -al $*" > /system/xbin/ll
 chmod 775 /system/xbin/ll
 
-# Remount /system read-only
-sync
-busybox mount -o remount,ro /system
-
-	# Section 2: Kernel tweaks
-
-# Set internal storage read_ahead_kb
-echo 512 > /sys/devices/virtual/bdi/179:0/read_ahead_kb
-
-# Set sdcard read_ahead_kb
-echo 1024 > /sys/devices/virtual/bdi/179:8/read_ahead_kb
-
-
-# Enable deep idle in sysfs
-echo 1 > /sys/class/misc/deepidle/enabled
-
-# Write new kernel vm parameters
-PSVM=/proc/sys/vm
-echo 100 > "$PSVM/vfs_cache_pressure"
-echo 20 > "$PSVM/dirty_ratio"
-echo 5 > "$PSVM/dirty_background_ratio"
-echo 200 > "$PSVM/dirty_expire_centisecs"
-echo 500 > "$PSVM/dirty_writeback_centisecs"
-echo 256 > "$PSVM/lowmem_reserve_ratio"
-echo 4 > "$PSVM/min_free_order_shift"
-echo 4096 > "$PSVM/min_free_kbytes"
-echo 3 > "$PSVM/page-cluster"
-echo 60 > "$PSVM/swappiness"
-
-# Bootanimation killer hack
-while [ 1 ]; do
-	sleep 1;
-	if pgrep android.process.acore; then
-		sleep 5;
-		pkill bootanimation
-		pkill samsungani
-		break;
-	fi
-done
+busybox mount -o ro,remount /system

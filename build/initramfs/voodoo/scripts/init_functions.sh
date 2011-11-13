@@ -829,6 +829,15 @@ readd_boot_animation()
 	fi
 }
 
+add_postboot_sh()
+{
+	echo >> init.rc
+	echo 'service postboot /sbin/postboot.sh
+		user root
+		group root
+		oneshot' >> init.rc
+}
+
 
 get_cwm_fstab_mount_option_for()
 {
@@ -867,6 +876,9 @@ letsgo()
 	mount_ data
 	readd_boot_animation
 	umount /data
+
+	# add postboot script
+	add_postboot_sh
 
 	# mount Ext4 partitions
 	test $cache_fs = ext4 && mount_ cache && > /voodoo/run/lagfix_enabled
