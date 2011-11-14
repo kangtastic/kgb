@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Tue Nov  8 00:15:20 2011
+# Sun Nov 13 23:31:39 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -419,10 +419,10 @@ CONFIG_PAGE_OFFSET=0xC0000000
 # CONFIG_PREEMPT_NONE is not set
 # CONFIG_PREEMPT_VOLUNTARY is not set
 CONFIG_PREEMPT=y
-CONFIG_HZ=512
+CONFIG_HZ=300
 # CONFIG_THUMB2_KERNEL is not set
 CONFIG_AEABI=y
-CONFIG_OABI_COMPAT=y
+# CONFIG_OABI_COMPAT is not set
 CONFIG_ARCH_DISCONTIGMEM_ENABLE=y
 # CONFIG_ARCH_SPARSEMEM_DEFAULT is not set
 # CONFIG_ARCH_SELECT_MEMORY_MODEL is not set
@@ -493,8 +493,6 @@ CONFIG_CPU_IDLE_GOV_MENU=y
 #
 # At least one emulation must be selected
 #
-# CONFIG_FPE_NWFPE is not set
-# CONFIG_FPE_FASTFPE is not set
 CONFIG_VFP=y
 CONFIG_VFPv3=y
 CONFIG_NEON=y

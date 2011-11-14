@@ -12,10 +12,10 @@
 
 #ifdef __KERNEL__
 # define HZ		CONFIG_HZ	/* Internal kernel timer frequency */
-# define USER_HZ	200		/* User interfaces are in "ticks" */
+# define USER_HZ	150		/* User interfaces are in "ticks" */
 # define CLOCKS_PER_SEC	(USER_HZ)	/* like times() */
 #else
-# define HZ		200
+# define HZ		150
 #endif
 
 #define EXEC_PAGESIZE	4096
