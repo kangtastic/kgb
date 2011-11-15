@@ -770,7 +770,13 @@ service mobex-daemon /system/bin/npsmobex
     
 service DR-deamon /system/bin/drexe
     user root
-    group system radio inet net_raw     
+    group system radio inet net_raw
+
+# Preboot script starts before zygote
+service preboot /sbin/preboot.sh
+    user root
+    group root
+    oneshot
 
 service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-system-server
     socket zygote stream 666
@@ -778,6 +784,10 @@ service zygote /system/bin/app_process -Xzygote /system/bin --zygote --start-sys
     onrestart write /sys/power/state on
     onrestart restart media
     onrestart restart netd
+
+# Fake init.d support thanks to busybox
+service run_parts /system/xbin/run-parts /system/etc/init.d
+    oneshot
 
 service media /system/bin/mediaserver
     user media
@@ -879,6 +889,12 @@ service keystore /system/bin/keystore /data/misc/keystore
     group keystore
     socket keystore stream 666
 
+#INNOPATH    
+#service fota_pipe /system/bin/fota_pipe
+service fota_pipe /sbin/fota_pipe
+    user root
+    group root
+    oneshot
 
 service immvibed /system/bin/immvibed
     user shell
@@ -902,14 +918,6 @@ service gps-daemon /system/vendor/bin/gpsd
     user system
     group system inet
 
-# Preboot script for modifications to /system
-service preboot /sbin/preboot.sh
-    user root
-    group root
-    oneshot
-
-# enable init.d support
-service run_parts /system/xbin/run-parts /system/etc/init.d
-    oneshot
-
-# Voodoo will add in the boot animation and postboot script sections upon boot
+# Voodoo will add in boot animation support and postboot script sections upon boot
+# See voodoo/scripts/init_functions.sh
+# If the service is named "playlogos1", the ROM usually kills it automatically

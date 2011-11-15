@@ -1,8 +1,11 @@
 #!/bin/sh
-busybox mount -t rootfs -o remount,rw rootfs
-busybox mount -o rw,remount /system
+# Pre-boot tweaks script
 
-# Install bootanimation binary
+# Remount rootfs rw, system rw and noatime
+busybox mount -t rootfs -o remount,rw rootfs
+busybox mount -o rw,remount,noatime /system
+
+# Install bootanimation binary as necessary
 REFBANIM=/res/lib/bootanimation
 SYSBANIM=/system/bin/bootanimation
 if ! cmp $REFBANIM $SYSBANIM; then
@@ -11,10 +14,10 @@ if ! cmp $REFBANIM $SYSBANIM; then
 	chmod 755 $SYSBANIM
 fi
 
-# Create /etc/init.d for callboost/zram scripts
+# Create /etc/init.d as necessary
 busybox mkdir -p /system/etc/init.d
 
-# Create resolv.conf, add in multicasted Verizon and Google DNS servers
+# Create resolv.conf, add multicasted Verizon and Google DNS servers as necessary
 RESOLVCONF=/system/etc/resolv.conf
 
 if [ ! -f $RESOLVCONF ]; then
@@ -32,5 +35,7 @@ grep "8.8.4.4" $RESOLVCONF || echo "nameserver 8.8.4.4" >> $RESOLVCONF
 if [ ! -x /system/xbin/ll ]; then
 echo "busybox ls -al $*" > /system/xbin/ll
 chmod 775 /system/xbin/ll
+fi
 
+# Remount system ro. End of script
 busybox mount -o ro,remount /system

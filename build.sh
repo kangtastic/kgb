@@ -10,6 +10,7 @@ set -e
 # Instantaneous date/time
 DATE=$(date +%m%d)
 TIME=$(date +%H%M)
+START_TIME_SEC=$(date +%s)
 
 # Kernel version tag
 KERNEL_VERSION="TKSGB Kernel for Samsung SCH-I500. Buildcode: $DATE.$TIME"
@@ -70,6 +71,8 @@ popd
 # SCRIPT MAIN BODY #
 ####################
 
+echo "Build script run on $(date -R)"
+
 echo_msg "BUILD START: $KERNEL_VERSION"
 
 # Clean kernel and old files
@@ -97,10 +100,9 @@ do
 	$STRIP --strip-debug $WORKDIR/initramfs/lib/modules/$(basename $line)
 done
 
-# Replace source-built OneNAND driver with stock Samsung EH09 modules
-# Seems to work better although no real evidence so far, still testing
-cp -f $BUILDDIR/initramfs-EI20/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
-cp -f $BUILDDIR/initramfs-EI20/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
+# Replace source-built OneNAND driver with stock modules from EH03
+cp -f $BUILDDIR/initramfs-EH03/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
+cp -f $BUILDDIR/initramfs-EH03/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
 
 # Remove unwanted initramfs files
 rm -f $WORKDIR/initramfs/lib/modules/hotspot_event_monitoring.ko
@@ -129,7 +131,16 @@ if [ -d /mnt/vbs ]; then
 	cp -f "$OUTDIR/TKSGB-I500-$DATE.$TIME.tar.md5" /mnt/vbs/
 	makeodin "TKSGB-I500-$DATE"
 fi
-# We now return you to your original programming D:
+
+#######
+# END #
+#######
 
 echo_msg "BUILD COMPLETE: $KERNEL_VERSION"
+
+END_TIME_SEC=$(date +%s)
+TIME_DIFF=$(($END_TIME_SEC - $START_TIME_SEC))
+
+echo "Build script exiting on $(date -R). Elapsed time: $(($TIME_DIFF / 60))m$(($TIME_DIFF % 60))s"
+
 exit

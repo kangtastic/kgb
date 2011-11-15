@@ -829,7 +829,7 @@ readd_boot_animation()
 	fi
 }
 
-add_postboot_sh()
+add_postboot()
 {
 	echo >> init.rc
 	echo 'service postboot /sbin/postboot.sh
@@ -878,7 +878,7 @@ letsgo()
 	umount /data
 
 	# add postboot script
-	add_postboot_sh
+	add_postboot
 
 	# mount Ext4 partitions
 	test $cache_fs = ext4 && mount_ cache && > /voodoo/run/lagfix_enabled
