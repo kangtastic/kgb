@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Sun Nov 13 23:31:39 2011
+# Mon Nov 14 18:04:50 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -63,6 +63,8 @@ CONFIG_SYSVIPC_SYSCTL=y
 CONFIG_TREE_RCU=y
 # CONFIG_TREE_PREEMPT_RCU is not set
 # CONFIG_TINY_RCU is not set
+# CONFIG_TINY_PREEMPT_RCU is not set
+# CONFIG_PREEMPT_RCU is not set
 # CONFIG_RCU_TRACE is not set
 CONFIG_RCU_FANOUT=32
 # CONFIG_RCU_FANOUT_EXACT is not set
