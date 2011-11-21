@@ -77,9 +77,7 @@ enum {
 	CHARGING_MODE_BOOTING,
 	BATT_TEMP_CHECK,
 	BATT_FULL_CHECK,
-#ifdef __VZW_AUTH_CHECK__
-        AUTH_BATTERY,
-#endif
+        AUTH_BATTERY,	// Returns valid result if __VZW_AUTH_CHECK__ is defined.
         BATT_CHG_CURRENT_AVER,
 	BATT_TYPE,
 #ifdef __SOC_TEST__

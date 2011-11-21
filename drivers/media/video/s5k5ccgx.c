@@ -3513,8 +3513,7 @@ static int s5k5ccgx_get_framesize_index(struct v4l2_subdev *sd)
     	}
     	else if(preview_ratio == 12)
     	{
-    	    // In camcorder mode, VGA size will be used instead of XGA to enhance performance.
-    	    size_index = (state->sensor_mode == SENSOR_MODE_MOVIE) ? PREVIEW_SIZE_4CIF : PREVIEW_SIZE_VGA;
+    	    size_index = PREVIEW_SIZE_4CIF;
     	}
     	else // (preview_ratio == 13) and others.
     	{
@@ -3977,7 +3976,7 @@ static int s5k5ccgx_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 	struct sensor_state *state = to_state(sd);
 	int err = 0;
 
-	CAM_ERROR_MSG(&client->dev, "%s: V4l2 control ID =%d\n", __func__, ctrl->id - V4L2_CID_PRIVATE_BASE);
+	CAM_ERROR_MSG(&client->dev, "%s :[ID=%d, Value=%d]\n", __func__, (ctrl->id - V4L2_CID_PRIVATE_BASE), ctrl->value);
 
 	if(state->check_dataline)
 	{
