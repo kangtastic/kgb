@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pre-boot tweaks script
+# Preboot script - runs before zygote
 
 # Remount rootfs rw, system rw and noatime
 busybox mount -t rootfs -o remount,rw rootfs
@@ -37,5 +37,21 @@ echo "busybox ls -al $*" > /system/xbin/ll
 chmod 775 /system/xbin/ll
 fi
 
-# Remount system ro. End of script
+# Remount system ro
 busybox mount -o ro,remount /system
+
+# Set kernel vm parameters
+# Move these here so that init.d scripts may modify these values later
+PSVM=/proc/sys/vm
+echo 100 > $PSVM/vfs_cache_pressure
+echo 20 > $PSVM/dirty_ratio
+echo 5 > $PSVM/dirty_background_ratio
+echo 200 > $PSVM/dirty_expire_centisecs
+echo 500 > $PSVM/dirty_writeback_centisecs
+# According to my very unscientific tests this is best left at default
+# echo 256 > $PSVM/lowmem_reserve_ratio
+echo 4 > $PSVM/min_free_order_shift
+# Same with this one, although there's much less evidence in this case
+# echo 4096 > $PSVM/min_free_kbytes
+echo 3 > $PSVM/page-cluster
+echo 60 > $PSVM/swappiness

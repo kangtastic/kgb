@@ -1,29 +1,20 @@
 #!/system/bin/sh
-echo "zram settings manager
-"
+echo "TKSGB zram settings manager"
 
-# Get RAM size in KB
-RAMSIZE=`grep MemTotal /proc/meminfo | awk '{ print \$2 }'`
-# zram size is set in bytes; 1024 * 12.5% = 128
-ZRAMSIZE=$(($RAMSIZE*128))
-INITSCRIPT_PATH=/system/etc/init.d/05zram
+# Includes
+. /sbin/lib.sh
 
-show_options() {
-echo "Usage: zram [OPTION]
-Valid options:
+# Defines
+ZRAM_SIZE=50331648
+# 48MB in bytes
 
-  enable    Install boot script
-            Enable zram
-  disable   Remove boot script
-            Disable zram
-  show      Show current status
+# Paths
+ZRAM_SCRIPT=/system/etc/init.d/05zram
 
-Example: zram show
-"
-}
-
-show_status() {
-echo "Current status:
+# Functions
+show_zram() {
+echo "
+Displaying current zram status:
 
 zram is compressed swap; numbers are in KB
 
@@ -32,63 +23,65 @@ free | tail -1
 echo ""
 }
 
-write_initscript() {
-if [ ! -d /system/etc/init.d ]; then
-	mkdir /system/etc/init.c
-fi
+write_zram() {
 echo "#!/system/bin/sh
-echo 1 > /sys/block/zram0/reset
-echo $1 > /sys/block/zram0/disksize
-mkswap /dev/block/zram0
-swapon /dev/block/zram0" > $2
-chown 0:0 $2
+if [ -e /dev/block/zram0 ]; then
+	echo 1 > /sys/block/zram0/reset
+	echo $1 > /sys/block/zram0/disksize
+	mkswap /dev/block/zram0
+	swapon /dev/block/zram0
+fi" > $2
+chown 0.0 $2
 chmod 755 $2
-}
-
-mount_system_rw() {
-mount -o rw,remount /system /system
-}
-mount_system_ro() {
-mount -o ro,remount /system /system
 }
 
 if [ -e /dev/block/zram0 ]; then
 	if [ $1 ]; then
 		if [ $1 == "enable" ]; then
-			mount_system_rw
-			write_initscript $ZRAMSIZE $INITSCRIPT_PATH
-			mount_system_ro
-			echo "Boot script installed."
+			echo "Enabling zram."
 
-			$INITSCRIPT_PATH
-			echo "zram enabled."
+			( system_rw &&							\
+				write_zram $ZRAM_SIZE $ZRAM_SCRIPT &&			\
+				system_ro &&						\
+				echo "Boot script installed." )				\
+			||								\
+			( echo "Boot script could not be installed!" &&			\
+				exit )
 
-			echo ""
+			( $INITSCRIPT_PATH &&						\
+				echo "zram enabled." )					\
+			||								\
+			( echo "zram could not be enabled!" &&				\
+				exit )
 		elif [ $1 == "disable" ]; then
-			swapoff /dev/block/zram0 >/dev/null 2>&1
-			echo 1 > /sys/block/zram0/reset >/dev/null 2>&1
-			echo "zram disabled."
+			echo "Disabling zram."
 
-			if [ -e $INITSCRIPT_PATH ]; then
-				mount_system_rw
-				rm $INITSCRIPT_PATH
-				mount_system_ro
-				echo "Boot script removed."
+			( swapoff /dev/block/zram0 >/dev/null 2>&1 &&			\
+				echo 1 > /sys/block/zram0/reset >/dev/null 2>&1 &&	\
+				echo "zram disabled." )					\
+			||								\
+			( echo "zram could not be disabled!" &&				\
+				exit )
+
+			if `fexist $ZRAM_SCRIPT`; then
+				( system_rw &&						\
+					rm $ZRAM_SCRIPT &&				\
+					system_ro &&					\
+					echo "Boot script removed." )			\
+				||							\
+				( echo "Boot script could not be removed!" &&		\
+					exit )
 			else
 				echo "Boot script not found. No need to remove."
 			fi
-			mount_system_ro
-
-			echo ""
 		elif [ $1 == "show" ]; then
-			show_status
+			show_zram
 		else
 			echo "Unrecognized option."
-			echo ""
-			show_options
+			show_options "zram"
 		fi
 	else
-	show_options
+	show_options "zram"
 	fi
 else
 echo "Kernel does not support zram."
