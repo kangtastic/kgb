@@ -87,7 +87,7 @@ if `fexist $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP`; then
 		elif [ $1 == "disable" ]; then
 			show_boost
 
-			( set_boost 2 0 0 1 &&						\
+			( set_boost 0 0 0 0 &&						\
 				echo "In-call boost values reset to defaults." )	\
 			||
 			( echo "In-call boost values could not be reset!" &&		\

@@ -1,4 +1,9 @@
 #!/bin/bash
+# Instantaneous date/time
+DATE=$(date +%m%d)
+TIME=$(date +%H%M)
+START_TIME_SEC=$(date +%s)
+
 # Using an uninitialized variable? Executed command throws an error? Quit
 set -u
 set -e
@@ -6,19 +11,13 @@ set -e
 ###############
 # DEFINITIONS #
 ###############
-
-# Instantaneous date/time
-DATE=$(date +%m%d)
-TIME=$(date +%H%M)
-START_TIME_SEC=$(date +%s)
-
-# Kernel version tag
-KERNEL_VERSION="TKSGB Kernel for Samsung SCH-I500. Buildcode: $DATE.$TIME"
-
 # Toolchain paths
 TOOLCHAIN=/home/vb/toolchain/arm-2011.03/bin
 TOOLCHAIN_PREFIX=arm-none-linux-gnueabi-
 STRIP=${TOOLCHAIN}/${TOOLCHAIN_PREFIX}strip
+
+# Kernel version tag
+KERNEL_VERSION="TKSGB Kernel for Samsung SCH-I500. Buildcode: $DATE.$TIME"
 
 # Other paths
 ROOTDIR=`pwd`

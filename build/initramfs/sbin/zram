@@ -1,5 +1,5 @@
 #!/system/bin/sh
-echo "TKSGB zram settings manager"
+echo "TKSGB zram manager"
 
 # Includes
 . /sbin/lib.sh
@@ -12,7 +12,8 @@ ZRAM_SIZE=50331648
 ZRAM_SCRIPT=/system/etc/init.d/05zram
 
 # Functions
-show_zram() {
+show_zram()
+{
 echo "
 Displaying current zram status:
 
@@ -23,9 +24,11 @@ free | tail -1
 echo ""
 }
 
-write_zram() {
+write_zram()
+{
+system_rw
 echo "#!/system/bin/sh
-if [ -e /dev/block/zram0 ]; then
+if [ -e /sys/block/zram0 ]; then
 	echo 1 > /sys/block/zram0/reset
 	echo $1 > /sys/block/zram0/disksize
 	mkswap /dev/block/zram0
@@ -33,6 +36,20 @@ if [ -e /dev/block/zram0 ]; then
 fi" > $2
 chown 0.0 $2
 chmod 755 $2
+system_ro
+}
+
+off_zram()
+{
+swapoff /dev/block/zram0 >/dev/null 2>&1 &&
+echo 1 > /sys/block/zram0/reset >/dev/null 2>&1
+}
+
+remove_zram()
+{
+system_rw
+rm $ZRAM_SCRIPT 2>&1
+system_ro
 }
 
 if [ -e /dev/block/zram0 ]; then
@@ -40,44 +57,28 @@ if [ -e /dev/block/zram0 ]; then
 		if [ $1 == "enable" ]; then
 			echo "Enabling zram."
 
-			( system_rw &&							\
-				write_zram $ZRAM_SIZE $ZRAM_SCRIPT &&			\
-				system_ro &&						\
-				echo "Boot script installed." )				\
-			||								\
-			( echo "Boot script could not be installed!" &&			\
-				exit )
+			( write_zram $ZRAM_SIZE $ZRAM_SCRIPT && echo "Boot script installed." ) || \
+				echo "Boot script could not be installed!"
 
-			( $INITSCRIPT_PATH &&						\
-				echo "zram enabled." )					\
-			||								\
-			( echo "zram could not be enabled!" &&				\
-				exit )
+			( $ZRAM_SCRIPT && echo "zram enabled." ) || \
+				echo "zram could not be enabled!"
+
 		elif [ $1 == "disable" ]; then
 			echo "Disabling zram."
 
-			( swapoff /dev/block/zram0 >/dev/null 2>&1 &&			\
-				echo 1 > /sys/block/zram0/reset >/dev/null 2>&1 &&	\
-				echo "zram disabled." )					\
-			||								\
-			( echo "zram could not be disabled!" &&				\
-				exit )
+			( off_zram && echo "zram disabled." ) || \
+				echo "zram could not be disabled!"
 
 			if `fexist $ZRAM_SCRIPT`; then
-				( system_rw &&						\
-					rm $ZRAM_SCRIPT &&				\
-					system_ro &&					\
-					echo "Boot script removed." )			\
-				||							\
-				( echo "Boot script could not be removed!" &&		\
-					exit )
+				( remove_zram && echo "Boot script removed." ) || \
+					echo "Boot script could not be removed!"
 			else
 				echo "Boot script not found. No need to remove."
 			fi
 		elif [ $1 == "show" ]; then
 			show_zram
 		else
-			echo "Unrecognized option."
+			echo "Unrecognized option!"
 			show_options "zram"
 		fi
 	else
