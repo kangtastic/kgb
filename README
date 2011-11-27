@@ -22,4 +22,4 @@ Alternatively, run build_log.sh, a wrapper script that calls build.sh and logs a
 
 /build.sh, /build_log.sh: Build script, log wrapper
 /build: Build-related files
-/arch/arm/configs/tksgb_defconfig: Default kernel configuration template
+/arch/arm/configs/kgb_defconfig: Default kernel configuration template
