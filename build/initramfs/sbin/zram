@@ -28,9 +28,16 @@ write_zram()
 {
 system_rw
 echo "#!/system/bin/sh
+
+# The zram size is set in bytes, and is 50331648 by default, corresponding to 48MB.
+# Edit the next line to change the zram size. Changes will take effect upon reboot.
+# Suggestion: Use Google Calculator! Just Google things like '32MB in bytes'. >;]
+
+ZRAM_SIZE=$1
+
 if [ -e /sys/block/zram0 ]; then
 	echo 1 > /sys/block/zram0/reset
-	echo $1 > /sys/block/zram0/disksize
+	echo \$ZRAM_SIZE > /sys/block/zram0/disksize
 	mkswap /dev/block/zram0
 	swapon /dev/block/zram0
 fi" > $2
