@@ -79,12 +79,9 @@ GTAGS
 *~
 \#*#
 
-# TKSGB Kernel buildlog files
-TKSGB-I500-*.buildlog.txt
+# KGB Kernel buildlog files
+KGB-I500-*.buildlog.txt
 
 # Ignore working and output directories in build/
 build/bin
 build/out
-
-# But include these prebuilt initramfs .xz's
-!build/initramfs/*.xz

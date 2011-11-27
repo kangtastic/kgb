@@ -17,7 +17,7 @@ TOOLCHAIN_PREFIX=arm-none-linux-gnueabi-
 STRIP=${TOOLCHAIN}/${TOOLCHAIN_PREFIX}strip
 
 # Kernel version tag
-KERNEL_VERSION="TKSGB Kernel for Samsung SCH-I500. Buildcode: $DATE.$TIME"
+KERNEL_VERSION="KGB Kernel for Samsung SCH-I500. Buildcode: $DATE.$TIME"
 
 # Other paths
 ROOTDIR=`pwd`
@@ -82,7 +82,7 @@ make CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX clean mrproper
 
 # Generate config
 echo_msg "CONFIGURING KERNEL"
-make ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX tksgb_defconfig
+make ARCH=arm CROSS_COMPILE=$TOOLCHAIN/$TOOLCHAIN_PREFIX kgb_defconfig
 
 # Generate initramfs
 echo_msg "GENERATING INITRAMFS"
@@ -122,13 +122,13 @@ cp -f $KERNEL_IMAGE $WORKDIR/update-zip/kernel_update/zImage
 cp -f $KERNEL_IMAGE $WORKDIR/zImage
 
 mkdir -p $OUTDIR
-makezip "TKSGB-I500-$DATE.$TIME"
-makeodin "TKSGB-I500-$DATE.$TIME"
+makezip "KGB-I500-$DATE.$TIME"
+makeodin "KGB-I500-$DATE.$TIME"
 
 # If you are not me, this ain't here kthx >;]
 if [ -d /mnt/vbs ]; then
-	cp -f "$OUTDIR/TKSGB-I500-$DATE.$TIME.tar.md5" /mnt/vbs/
-	makeodin "TKSGB-I500-$DATE"
+	cp -f "$OUTDIR/KGB-I500-$DATE.$TIME.tar.md5" /mnt/vbs/
+	makeodin "KGB-I500-$DATE"
 fi
 
 #######

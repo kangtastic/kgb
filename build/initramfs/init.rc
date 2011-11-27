@@ -772,7 +772,7 @@ service DR-deamon /system/bin/drexe
     user root
     group system radio inet net_raw
 
-# Preboot script starts before zygote
+# KGB Kernel - Preboot script starts before zygote
 service preboot /sbin/preboot.sh
     user root
     group root

@@ -1,4 +1,4 @@
-# Helper functions for TKSGB scripts
+# Helper functions for scripts included with KGB Kernel
 system_rw()
 {
 busybox mount -o rw,remount /system

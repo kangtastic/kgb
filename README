@@ -1,14 +1,13 @@
-	TKSGB KERNEL
+	KGB KERNEL - A Kernel for Gingerbread
 
-A Linux 2.6.35.7 kernel for SCH-I500 devices running Gingerbread and TouchWiz
+Linux 2.6.35.7 kernel for SCH-I500 devices running TouchWiz Gingerbread ROMs
 
 Originally based on Samsung's EH09 source drop for Mesmerize. Relevant updates have been made from EI20 and EH03.
 
 
-
 	BUILDING THE KERNEL
 
-Set up a build environment. Obtain and install/unpack an appropriate cross-compiler toolchain targeting the ARM architecture, such as Sourcery CodeBench Lite. Kernel building does not require anything more than ARM EABI support. Bear in mind that building things that aren't kernels (e.g. busybox) is impossible with a toolchain only targeting the ARM EABI.
+Set up a build environment. Obtain and install/unpack an appropriate cross-compiler toolchain targeting the ARM architecture, such as Sourcery CodeBench Lite. Kernel building does not require anything more than ARM EABI support. However, building native Linux applications (e.g. busybox) requires a toolchain with some additional libraries such as Sourcery Lite ARM GNU/Linux.
 
 Edit /build.sh, where / is the kernel root directory, to set TOOLCHAIN and TOOLCHAIN_PREFIX correctly for your setup. For example, if you installed Sourcery Lite arm-2011.03 GNU/Linux to /opt/toolchains/arm-2011.03, then those lines would read "TOOLCHAIN=/opt/toolchains/arm-2011.03/bin" and "TOOLCHAIN_PREFIX=arm-none-linux-gnueabi-".
 
@@ -19,13 +18,8 @@ Run build.sh. Output, including Odin and CWM packages, will be sent to in /build
 Alternatively, run build_log.sh, a wrapper script that calls build.sh and logs all the screen output to a text file in /.
 
 
-
 	NOTES
 
 /build.sh, /build_log.sh: Build script, log wrapper
-
 /build: Build-related files
-
 /arch/arm/configs/tksgb_defconfig: Default kernel configuration template
-
-

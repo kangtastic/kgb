@@ -1,13 +1,12 @@
-ui_print(" ");
-ui_print("       hmm yes but, what does tks even mean??");
+ui_print("");
+ui_print("       KGB Kernel - A Kernel for Gingerbread!");
 ui_print(" vvvvvvvvvvv /");
 ui_print("(--[ .]-[ .]");
 ui_print("(______o___)");
-ui_print("               -Kurt Cobain");
-ui_print(" ");
+ui_print("");
 run_program("/sbin/mount", "/dev/block/stl9", "/system");
 show_progress(1.0, 10);
-ui_print("INSTALLING TKSGB-I500-$DATE KERNEL");
+ui_print("INSTALLING KGB-I500-$DATE KERNEL");
 package_extract_dir("kernel_update", "/tmp/kernel_update");
 set_progress(0.5);
 set_perm(0, 0, 0755, "/tmp/kernel_update/bmlwrite");

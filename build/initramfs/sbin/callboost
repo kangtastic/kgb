@@ -1,5 +1,5 @@
 #!/system/bin/sh
-echo "TKSGB in-call boost settings manager"
+echo "KGB in-call boost settings manager"
 
 # Includes
 . /sbin/lib.sh
