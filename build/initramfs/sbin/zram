@@ -56,6 +56,7 @@ if [ -e /dev/block/zram0 ]; then
 	if [ $1 ]; then
 		if [ $1 == "enable" ]; then
 			echo "Enabling zram."
+			echo ""
 
 			( write_zram $ZRAM_SIZE $ZRAM_SCRIPT && echo "Boot script installed." ) || \
 				echo "Boot script could not be installed!"
@@ -63,11 +64,14 @@ if [ -e /dev/block/zram0 ]; then
 			( $ZRAM_SCRIPT && echo "zram enabled." ) || \
 				echo "zram could not be enabled!"
 
+			echo ""
+			echo "zram successfully enabled."
 		elif [ $1 == "disable" ]; then
 			echo "Disabling zram."
+			echo ""
 
-			( off_zram && echo "zram disabled." ) || \
-				echo "zram could not be disabled!"
+			( off_zram && echo "zram turned off." ) || \
+				echo "zram could not be turned off!"
 
 			if `fexist $ZRAM_SCRIPT`; then
 				( remove_zram && echo "Boot script removed." ) || \
@@ -75,6 +79,9 @@ if [ -e /dev/block/zram0 ]; then
 			else
 				echo "Boot script not found. No need to remove."
 			fi
+
+			echo ""
+			echo "zram successfully disabled."
 		elif [ $1 == "show" ]; then
 			show_zram
 		else

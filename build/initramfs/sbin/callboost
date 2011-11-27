@@ -14,6 +14,10 @@ BOOST_SCRIPT=/system/etc/init.d/91callboost
 # Functions
 show_boost()
 {
+B_RCV=`cat $BOOST_RCV`
+B_BT=`cat $BOOST_BT`
+B_SPK=`cat $BOOST_SPK`
+B_HP=`cat $BOOST_HP`
 echo "
 Displaying current in-call boost settings:
 
@@ -22,14 +26,6 @@ Displaying current in-call boost settings:
 
     0: +0dB, 1: +6dB, 2: +12dB, 3: +18dB
 "
-}
-
-read_boost()
-{
-B_RCV=`cat $BOOST_RCV`
-B_BT=`cat $BOOST_BT`
-B_SPK=`cat $BOOST_SPK`
-B_HP=`cat $BOOST_HP`
 }
 
 set_boost()
@@ -52,7 +48,6 @@ chmod 755 $BOOST_SCRIPT
 }
 
 if `fexist $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP`; then
-	read_boost
 	if [ $1 ]; then
 		if [ $1 == "enable" ]; then
 			show_boost
