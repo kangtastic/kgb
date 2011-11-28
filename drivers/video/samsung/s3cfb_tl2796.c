@@ -29,6 +29,7 @@
 #include <plat/gpio-cfg.h>
 #include <plat/regs-fb.h>
 #include <linux/earlysuspend.h>
+#include <linux/miscdevice.h>
 
 #define SLEEPMSEC		0x1000
 #define ENDDEF			0x2000
@@ -37,6 +38,7 @@
 #define MIN_BL	30
 #define MAX_BL	255
 #define MAX_GAMMA_VALUE	24
+#define U32_MAX (~(u32)0)
 
 extern struct class *sec_class;
 
@@ -74,6 +76,9 @@ struct s5p_lcd {
 	struct device *sec_lcdtype_dev;
 	struct early_suspend    early_suspend;
 };
+
+struct s5p_lcd *lcd_;
+u32 color_mult[3] = { U32_MAX, U32_MAX, U32_MAX };
 
 static int s6e63m0_spi_write_driver(struct s5p_lcd *lcd, u16 reg)
 {
@@ -217,10 +222,23 @@ void tl2796_ldi_wake_up(void)
 	s6e63m0_panel_send_sequence(lcdpower, pdata->standby_off);
 }
 
+static void apply_multiplier(u16 *loc_table, u32 multiplier) {
+	// Doing some integer manipulation here due to the fact that we can't use floating points.
+	u16 value;
+
+	// Reduce the multiplier to an amount we can multiply by without overflow
+	multiplier /= 256;
+	value = *loc_table - 256;
+	value = value * multiplier / (U32_MAX / 256); // Must multiply before divide
+	*loc_table = value + 256;
+}
+
 static void update_brightness(struct s5p_lcd *lcd)
 {
 	struct s5p_panel_data *pdata = lcd->data;
 	int gamma_value;
+	const u16 *orig_gamma_table;
+	u16 gamma_table[25];
 
 	gamma_value = get_gamma_value_from_bl(lcd->bl);
 
@@ -230,10 +248,19 @@ static void update_brightness(struct s5p_lcd *lcd)
 	update_acl(lcd);
 #endif
 	if (lcd->on_19gamma)
-		s6e63m0_panel_send_sequence(lcd, pdata->gamma19_table[gamma_value]);
+		orig_gamma_table = pdata->gamma19_table[gamma_value];
 	else
-		s6e63m0_panel_send_sequence(lcd, pdata->gamma22_table[gamma_value]);
+		orig_gamma_table = pdata->gamma22_table[gamma_value];
 
+	// Create a copy of the gamma value so that we can apply the multiplier
+	memcpy(gamma_table, orig_gamma_table, sizeof(gamma_table));
+
+	// Apply the multiplier
+	apply_multiplier(&gamma_table[18], color_mult[0]);
+	apply_multiplier(&gamma_table[20], color_mult[1]);
+	apply_multiplier(&gamma_table[22], color_mult[2]);
+
+	s6e63m0_panel_send_sequence(lcd, gamma_table);
 	s6e63m0_panel_send_sequence(lcd, pdata->gamma_update);
 }
 
@@ -420,6 +447,107 @@ void tl2796_late_resume(struct early_suspend *h)
 
 	return ;
 }
+
+static ssize_t gamma_table_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "<unsupported>\n");
+}
+
+static ssize_t gamma_table_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	return size;
+}
+
+static ssize_t red_multiplier_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", color_mult[0]);
+}
+
+static ssize_t red_multiplier_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		color_mult[0] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+static ssize_t green_multiplier_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", color_mult[1]);
+}
+
+static ssize_t green_multiplier_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		color_mult[1] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+static ssize_t blue_multiplier_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", color_mult[2]);
+}
+
+static ssize_t blue_multiplier_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 value;
+	if (sscanf(buf, "%u", &value) == 1)
+	{
+		color_mult[2] = value;
+		update_brightness(lcd_);
+	}
+	return size;
+}
+
+// All multipliers default to U32_MAX
+static ssize_t multiplier_original_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", U32_MAX);
+}
+
+static ssize_t color_tuning_version_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "CM7 SGS Color Tuning\n");
+}
+
+// We don't support gamma_table replacement, but Voodoo Control App will crash on boot without it
+static DEVICE_ATTR(gamma_table, S_IRUGO | S_IWUGO, gamma_table_show, gamma_table_store);
+static DEVICE_ATTR(red_multiplier, S_IRUGO | S_IWUGO, red_multiplier_show, red_multiplier_store);
+static DEVICE_ATTR(red_multiplier_original, S_IRUGO, multiplier_original_show, NULL);
+static DEVICE_ATTR(green_multiplier, S_IRUGO | S_IWUGO, green_multiplier_show, green_multiplier_store);
+static DEVICE_ATTR(green_multiplier_original, S_IRUGO, multiplier_original_show, NULL);
+static DEVICE_ATTR(blue_multiplier, S_IRUGO | S_IWUGO, blue_multiplier_show, blue_multiplier_store);
+static DEVICE_ATTR(blue_multiplier_original, S_IRUGO, multiplier_original_show, NULL);
+static DEVICE_ATTR(version, S_IRUGO, color_tuning_version_show, NULL);
+
+static struct attribute *color_tuning_attributes[] = {
+	&dev_attr_gamma_table.attr,
+	&dev_attr_red_multiplier.attr,
+	&dev_attr_red_multiplier_original.attr,
+	&dev_attr_green_multiplier.attr,
+	&dev_attr_green_multiplier_original.attr,
+	&dev_attr_blue_multiplier.attr,
+	&dev_attr_blue_multiplier_original.attr,
+	&dev_attr_version.attr,
+	NULL
+};
+
+static struct attribute_group color_tuning_group = {
+	.attrs = color_tuning_attributes,
+};
+
+static struct miscdevice color_tuning_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "voodoo_color",
+};
+
 static int __devinit tl2796_probe(struct spi_device *spi)
 {
 	struct s5p_lcd *lcd;
@@ -531,6 +659,17 @@ static int __devinit tl2796_probe(struct spi_device *spi)
 #endif
 	pr_info("tl2796_probe successfully proved\n");
 	lcdpower = (struct s5p_lcd *) lcd; 
+
+	misc_register(&color_tuning_device);
+	if (sysfs_create_group(&color_tuning_device.this_device->kobj, &color_tuning_group) < 0)
+	{
+		printk("%s sysfs_create_group fail\n", __FUNCTION__);
+		pr_err("Failed to create sysfs group for device (%s)!\n", color_tuning_device.name);
+	}
+
+	// copy the pointer for use with the color tuning sysfs interface
+	lcd_ = lcd;
+
 	return 0;
 err_setup_gammaset:
 	lcd_device_unregister(lcd->lcd_dev);
