@@ -38,7 +38,7 @@
 #include <linux/suspend.h>
 #endif
 #include "s3cfb.h"
-//#include "logo_rgb24_wvga_portrait.h"
+#include "logo_rgb24_wvga_portrait.h"
 #ifdef CONFIG_FB_S3C_MDNIE
 #include "s3cfb_mdnie.h"
 #include <linux/delay.h>
@@ -155,10 +155,10 @@ static int s3cfb_draw_logo(struct fb_info *fb)
 		iounmap(logo_virt_buf);
 	}
 */
-	/*if (readl(S5P_INFORM5)) //LPM_CHARGING mode
+	if (readl(S5P_INFORM5)) //LPM_CHARGING mode
 		memcpy(fb->screen_base, charging, fb->var.yres * fb->fix.line_length);
 	else
-		//memcpy(fb->screen_base, LOGO_RGB24, fb->var.yres * fb->fix.line_length);*/
+		memcpy(fb->screen_base, LOGO_RGB24, fb->var.yres * fb->fix.line_length);
 	return 0;
 }
 #endif
