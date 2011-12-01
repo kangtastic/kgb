@@ -2,8 +2,8 @@
 # Preboot script - runs before zygote
 
 # Remount rootfs rw, system rw and noatime
-busybox mount -t rootfs -o remount,rw rootfs
-busybox mount -o rw,remount,noatime /system
+mount -t rootfs -o rw,remount rootfs /
+mount -o rw,remount,noatime /system /system
 
 # Install bootanimation binary as necessary
 REFBANIM=/res/lib/bootanimation
@@ -15,13 +15,16 @@ if ! cmp $REFBANIM $SYSBANIM; then
 fi
 
 # Create /etc/init.d as necessary
-busybox mkdir -p /system/etc/init.d
+/bin/mkdir -p /system/etc/init.d
 
 # Create resolv.conf, add multicasted Verizon and Google DNS servers as necessary
+# The ramdisk's busybox does not have grep so check for a system busybox
+if [ -e /system/xbin/busybox ]; then
+
 RESOLVCONF=/system/etc/resolv.conf
 
 if [ ! -f $RESOLVCONF ]; then
-	busybox touch $RESOLVCONF
+	> $RESOLVCONF
 	chown 0.0 $RESOLVCONF
 	chmod 644 $RESOLVCONF
 fi
@@ -31,6 +34,8 @@ grep "4.2.2.4" $RESOLVCONF || echo "nameserver 4.2.2.4" >> $RESOLVCONF
 grep "8.8.8.8" $RESOLVCONF || echo "nameserver 8.8.8.8" >> $RESOLVCONF
 grep "8.8.4.4" $RESOLVCONF || echo "nameserver 8.8.4.4" >> $RESOLVCONF
 
+fi
+
 # Add a little helper named ll to call "busybox ls -al"
 if [ ! -x /system/xbin/ll ]; then
 echo "busybox ls -al $*" > /system/xbin/ll
@@ -38,7 +43,7 @@ chmod 775 /system/xbin/ll
 fi
 
 # Remount system ro
-busybox mount -o ro,remount /system
+mount -o ro,remount /system /system
 
 # Set kernel vm parameters
 # Move these here so that init.d scripts may modify these values later

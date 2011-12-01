@@ -1,103 +1,99 @@
 #!/system/bin/sh
 echo "KGB zram manager"
-
+echo ""
 # Includes
 . /sbin/lib.sh
 
-# Defines
-ZRAM_SIZE=50331648
-# 48MB in bytes
+# Abort conditions
+root_uid_check
+[ -e /dev/block/zram0 ] || err_exit "Kernel does not support zram!"
 
-# Paths
+# Defines
+ZRAM_SIZE_MB=48
+ZRAM_SIZE_BYTES=$(($ZRAM_SIZE_MB * 1024 * 1024))
 ZRAM_SCRIPT=/system/etc/init.d/05zram
+ZRAM_TOTAL=0
+ZRAM_USED=0
+ZRAM_FREE=0
+REMOUNTED=0
 
 # Functions
-show_zram()
+probe_zram()
 {
-echo "
-Displaying current zram status:
-
-zram is compressed swap; numbers are in KB
-
-             total         used         free"
-free | tail -1
-echo ""
+ZRAM_TOTAL=$(free | grep Swap | awk '{ print $2 }')
+ZRAM_USED=$(free | grep Swap | awk '{ print $3 }')
+ZRAM_FREE=$(free | grep Swap | awk '{ print $4 }')
+grep -q zram /proc/swaps || return 1
 }
-
-write_zram()
+on_zram()
 {
-system_rw
-echo "#!/system/bin/sh
-
-# The zram size is set in bytes, and is 50331648 by default, corresponding to 48MB.
-# Edit the next line to change the zram size. Changes will take effect upon reboot.
-# Suggestion: Use Google Calculator! Just Google things like '32MB in bytes'. >;]
-
-ZRAM_SIZE=$1
-
-if [ -e /sys/block/zram0 ]; then
-	echo 1 > /sys/block/zram0/reset
-	echo \$ZRAM_SIZE > /sys/block/zram0/disksize
-	mkswap /dev/block/zram0
-	swapon /dev/block/zram0
-fi" > $2
-chown 0.0 $2
-chmod 755 $2
-system_ro
+echo -n "Activating zram... "
+echo 1 > /sys/block/zram0/reset 2>&1 &&
+echo $ZRAM_SIZE_BYTES > /sys/block/zram0/disksize 2>&1 &&
+mkswap /dev/block/zram0 > /dev/null 2>&1 &&
+swapon /dev/block/zram0 > /dev/null 2>&1 &&
+echo "done!" || err_exit "Failed to activate zram!"
 }
-
 off_zram()
 {
-swapoff /dev/block/zram0 >/dev/null 2>&1 &&
-echo 1 > /sys/block/zram0/reset >/dev/null 2>&1
+echo -n "Deactivating zram... "
+swapoff /dev/block/zram0 > /dev/null 2>&1 && \
+echo 1 > /sys/block/zram0/reset > /dev/null 2>&1 && \
+echo "done!" || err_exit "Failed to deactivate zram!"
 }
-
-remove_zram()
+show_zram()
 {
-system_rw
-rm $ZRAM_SCRIPT 2>&1
-system_ro
+echo -n "Current zram status: "
+probe_zram && echo "enabled
+
+   Total:  $ZRAM_TOTAL KB
+    Used:  $ZRAM_USED KB
+    Free:  $ZRAM_FREE KB" || echo "disabled"
+}
+write_boot()
+{
+[ -f $1 ] && echo -n "Overwriting existing boot script at $1... " || echo -n "Installing boot script to $1... "
+echo "#!/system/bin/sh
+#####################################
+# THIS VALUE MUST BE A WHOLE NUMBER #
+# BAD VALUES MAY CAUSE BOOT FAILURE #
+#####################################
+ZRAM_SIZE_MB=$ZRAM_SIZE_MB
+
+# Determines zram size in megabytes.
+# Default is 48.
+# Reboot for changes to take effect.
+
+[ -e /dev/block/zram0 ] || exit
+ZRAM_SIZE_BYTES=\$((\$ZRAM_SIZE_MB * 1024 * 1024))
+echo 1 > /sys/block/zram0/reset 2>&1 &&
+echo \$ZRAM_SIZE_BYTES > /sys/block/zram0/disksize 2>&1 &&
+mkswap /dev/block/zram0 2>&1 &&
+swapon /dev/block/zram0 2>&1" > $1 && chown 0.0 $1 && chmod 755 $1 &&
+echo "done!" || err_exit "Failed to install boot script!"
 }
 
-if [ -e /dev/block/zram0 ]; then
-	if [ $1 ]; then
-		if [ $1 == "enable" ]; then
-			echo "Enabling zram."
-			echo ""
-
-			( write_zram $ZRAM_SIZE $ZRAM_SCRIPT && echo "Boot script installed." ) || \
-				echo "Boot script could not be installed!"
-
-			( $ZRAM_SCRIPT && echo "zram enabled." ) || \
-				echo "zram could not be enabled!"
-
-			echo ""
-			echo "zram successfully enabled."
-		elif [ $1 == "disable" ]; then
-			echo "Disabling zram."
-			echo ""
-
-			( off_zram && echo "zram turned off." ) || \
-				echo "zram could not be turned off!"
-
-			if `fexist $ZRAM_SCRIPT`; then
-				( remove_zram && echo "Boot script removed." ) || \
-					echo "Boot script could not be removed!"
-			else
-				echo "Boot script not found. No need to remove."
-			fi
-
-			echo ""
-			echo "zram successfully disabled."
-		elif [ $1 == "show" ]; then
-			show_zram
-		else
-			echo "Unrecognized option!"
-			show_options "zram"
-		fi
-	else
-	show_options "zram"
-	fi
-else
-echo "Kernel does not support zram."
+# Script body
+if system_is_ro; then
+	system_rw
+	REMOUNTED=1
 fi
+
+if [ "$1" = "enable" ]; then
+	probe_zram && echo "zram is already on. Resetting." && off_zram
+	on_zram && write_boot $ZRAM_SCRIPT
+elif [ "$1" = "disable" ]; then
+	probe_zram && off_zram || echo "zram is already off. No need to reset."
+	probe_del_boot $ZRAM_SCRIPT
+elif [ "$1" = "show" ]; then
+	show_zram
+elif [ $1 ]; then
+	echo "Unrecognized option: $1"; echo ""; show_options "zram"
+else
+	show_options "zram"
+fi
+
+[ "$REMOUNTED" = "1" ] && system_ro
+
+echo "
+Finished."

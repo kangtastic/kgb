@@ -1,115 +1,102 @@
 #!/system/bin/sh
 echo "KGB in-call boost settings manager"
-
+echo ""
 # Includes
 . /sbin/lib.sh
 
-# Paths
+# Abort conditions
+root_uid_check
+af $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP || err_exit "Kernel does not support in-call boost settings!"
+
+# Defines
 BOOST_RCV=/sys/devices/virtual/misc/voodoo_sound/incall_boost_rcv
 BOOST_BT=/sys/devices/virtual/misc/voodoo_sound/incall_boost_bt
 BOOST_SPK=/sys/devices/virtual/misc/voodoo_sound/incall_boost_spk
 BOOST_HP=/sys/devices/virtual/misc/voodoo_sound/incall_boost_hp
 BOOST_SCRIPT=/system/etc/init.d/91callboost
+REMOUNTED=0
 
 # Functions
 show_boost()
 {
-B_RCV=`cat $BOOST_RCV`
-B_BT=`cat $BOOST_BT`
-B_SPK=`cat $BOOST_SPK`
-B_HP=`cat $BOOST_HP`
-echo "
-Displaying current in-call boost settings:
+B_RCV=$(cat $BOOST_RCV)
+B_BT=$(cat $BOOST_BT)
+B_SPK=$(cat $BOOST_SPK)
+B_HP=$(cat $BOOST_HP)
+echo "Displaying current in-call boost settings:
 
 	RCV	BT	SPK	HP
 	$B_RCV	$B_BT	$B_SPK	$B_HP
 
-    0: +0dB, 1: +6dB, 2: +12dB, 3: +18dB
-"
+    0: +0dB, 1: +6dB, 2: +12dB, 3: +18dB"
 }
-
 set_boost()
 {
-echo $1 > $BOOST_RCV
-echo $2 > $BOOST_BT
-echo $3 > $BOOST_SPK
-echo $4 > $BOOST_HP
+echo $1 > $BOOST_RCV &&
+echo $2 > $BOOST_BT &&
+echo $3 > $BOOST_SPK &&
+echo $4 > $BOOST_HP &&
+echo "In-call boost values set to $1, $2, $3, $4" || err_exit "Failed to set in-call boost values!"
 }
-
-write_boost()
+read_check()
 {
+while [ 1 ]; do
+	read -p "$1" i
+	if [ $i -eq $i 2>/dev/null ] && [ $i -ge 0 ] && [ $i -le 3 ]; then
+		echo $i
+		break
+	fi
+done
+}
+write_boot()
+{
+[ -f $1 ] && echo -n "Overwriting existing boot script at $1... " || echo -n "Installing boot script to $1... "
 echo "#!/system/bin/sh
 echo $B_RCV > $BOOST_RCV
 echo $B_BT > $BOOST_BT
 echo $B_SPK > $BOOST_SPK
-echo $B_HP > $BOOST_HP" > $BOOST_SCRIPT
-chown 0.0 $BOOST_SCRIPT
-chmod 755 $BOOST_SCRIPT
+echo $B_HP > $BOOST_HP" > $1 && chown 0.0 $1 && chmod 755 $1 &&
+echo "done!" || err_exit "Failed to install boot script!"
 }
 
-if `fexist $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP`; then
-	if [ $1 ]; then
-		if [ $1 == "enable" ]; then
-			show_boost
-
-			echo "    Recommended: 1 or 2, 0, 0, 0 or 1"
-			echo ""
-			echo -n "    New RECEIVER boost value:	"
-			read B_RCV
-			echo -n "    New BLUETOOTH boost value:	"
-			read B_BT
-			echo -n "    New SPEAKER boost value:	"
-			read B_SPK
-			echo -n "    New HEADPHONE boost value:	"
-			read B_HP
-			echo ""
-
-			( set_boost $B_RCV $B_BT $B_SPK $B_HP &&			\
-				echo "In-call boost values set." )			\
-			||								\
-			( echo "In-call boost values could not be set!" &&		\
-				exit )
-
-			( system_rw &&							\
-				write_boost &&						\
-				system_ro &&						\
-				echo "Boot script installed." )				\
-			||								\
-			( echo "Boot script could not be installed!" &&			\
-				exit )
-
-			show_boost
-		elif [ $1 == "disable" ]; then
-			show_boost
-
-			( set_boost 0 0 0 0 &&						\
-				echo "In-call boost values reset to defaults." )	\
-			||
-			( echo "In-call boost values could not be reset!" &&		\
-				exit )
-
-			if `fexist $BOOST_SCRIPT`; then
-				( system_rw &&						\
-					rm $BOOST_SCRIPT &&				\
-					system_ro &&					\
-					echo "Boot script removed." )			\
-				||							\
-				( echo "Boot script could not be removed!" &&		\
-					exit )
-			else
-				echo "Boot script not found. No need to remove."
-			fi
-
-			show_boost
-		elif [ $1 == "show" ]; then
-			show_boost
-		else
-			echo "Unrecognized option."
-			show_options "callboost"
-		fi
-	else
-		show_options "callboost"
-	fi
-else
-echo "Kernel does not support in-call boost settings."
+# Script body
+if system_is_ro; then
+	system_rw
+	REMOUNTED=1
 fi
+
+if [ "$1" = "enable" ]; then
+	show_boost
+	echo ""
+	echo "    Defaults: 0, 0, 0, 0"
+	echo "    Recommended: 1 or 2, 0, 0, 0 or 1"
+	echo ""
+	B_RCV="$(read_check '    New RECEIVER boost value:	')"
+	B_BT="$(read_check '    New BLUETOOTH boost value:	')"
+	B_SPK="$(read_check '    New SPEAKER boost value:	')"
+	B_HP="$(read_check '    New HEADPHONE boost value:	')"
+	echo ""
+	set_boost $B_RCV $B_BT $B_SPK $B_HP
+	write_boot $BOOST_SCRIPT
+	echo ""
+	show_boost
+elif [ "$1" = "disable" ]; then
+	show_boost
+	echo ""
+	echo "Resetting in-call boost values to defaults."
+	set_boost 0 0 0 0
+	probe_del_boot $BOOST_SCRIPT
+	echo ""
+	show_boost
+elif [ "$1" = "show" ]; then
+	show_boost
+elif [ $1 ]; then
+	echo "Unrecognized option: $1"; echo ""; show_options "callboost"
+else
+	show_options "callboost"
+fi
+
+[ "$REMOUNTED" = "1" ] && system_ro
+
+echo "
+Finished."
