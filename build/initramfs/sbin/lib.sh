@@ -47,7 +47,7 @@ Example: $1 show"
 probe_del_boot()
 {
 if [ -f $1 ]; then
-	echo -n "Removing existing boot script at $1..."
+	echo -n "Removing existing boot script at $1... "
 	rm $1 && echo "done!" || err_exit "Failed to remove boot script!"
 else
 	echo "Boot script not installed. No need to remove."
