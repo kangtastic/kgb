@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.35.7
-# Mon Nov 28 00:00:47 2011
+# Thu Dec  1 23:42:47 2011
 #
 CONFIG_ARM=y
 CONFIG_HAVE_PWM=y
@@ -1458,6 +1458,8 @@ CONFIG_FB_S3C_NR_BUFFERS=2
 CONFIG_FB_S3C_TL2796=y
 # CONFIG_FB_S3C_S6D16A0X is not set
 # CONFIG_FB_S3C_NT35580 is not set
+CONFIG_FB_VOODOO=y
+# CONFIG_FB_VOODOO_DEBUG_LOG is not set
 # CONFIG_FB_S3C_LVDS is not set
 # CONFIG_FB_S3C_AMS701KA is not set
 CONFIG_FB_S3C_MDNIE=y

@@ -11,6 +11,10 @@
 */
 #include <linux/types.h>
 
+#define SLEEPMSEC		0x1000
+#define ENDDEF			0x2000
+#define DEFMASK			0xFF00
+
 struct s5p_panel_data_tft {
 	const u16 *seq_set;
 	const u16 *sleep_in;
