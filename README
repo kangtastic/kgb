@@ -7,19 +7,39 @@ Originally based on Samsung's EH09 source drop for Mesmerize. Relevant updates h
 
 	BUILDING THE KERNEL
 
-Set up a build environment. Obtain and install/unpack an appropriate cross-compiler toolchain targeting the ARM architecture, such as Sourcery CodeBench Lite. Kernel building does not require anything more than ARM EABI support. However, building native Linux applications (e.g. busybox) requires a toolchain with some additional libraries such as Sourcery Lite ARM GNU/Linux.
+1. Set up a build environment.
 
-Edit /build.sh, where / is the kernel root directory, to set TOOLCHAIN and TOOLCHAIN_PREFIX correctly for your setup. For example, if you installed Sourcery Lite arm-2011.03 GNU/Linux to /opt/toolchains/arm-2011.03, then those lines would read "TOOLCHAIN=/opt/toolchains/arm-2011.03/bin" and "TOOLCHAIN_PREFIX=arm-none-linux-gnueabi-".
+2. Obtain and install/unpack an appropriate cross-compiler toolchain targeting the ARM architecture, such as Sourcery Lite arm-2011.03 GNU/Linux.
 
-While not strictly necessary when using the build scripts, setting CROSS_COMPILE in /Makefile is probably a good idea anyway. In the above example, "CROSS_COMPILE=/opt/toolchains/arm-2011.03/bin/arm-none-linux-gnueabi-".
+Edit build.sh and set TOOLCHAIN and TOOLCHAIN_PREFIX. Also edit Makefile and set CROSS_COMPILE. These should correspond to the location of the toolchain and the filenames within the /bin directory where the toolchain is installed.
 
-Run build.sh. Output, including Odin and CWM packages, will be sent to in /build/out. Note that this directory is automatically destroyed at the beginning of each build.
+For example, if you installed Sourcery Lite arm-2011.03 GNU/Linux to /opt/toolchains/arm-2011.03:
+TOOLCHAIN=/opt/toolchains/arm-2011.03/bin
+TOOLCHAIN_PREFIX=arm-none-linux-gnueabi-
+CROSS_COMPILE=/opt/toolchains/arm-2011.03/bin/arm-none-linux-gnueabi-
 
-Alternatively, run build_log.sh, a wrapper script that calls build.sh and logs all the screen output to a text file in /.
+3. Run one of the following from the command line:
+./build.sh  (Build the kernel)
+./build_log.sh (Build the kernel, and log the process to a text file in the kernel source directory)
+
+4. Copy the Odin and/or CWM packages that are created in /build/out to somewhere else.
+The build script automatically deletes /build/out at the beginning of every build.
 
 
 	NOTES
 
-/build.sh, /build_log.sh: Build script, log wrapper
-/build: Build-related files
+Directories:
+/build: Catch-all for kernel build-related files that aren't technically part of the source tree
+
+/build/initramfs: initramfs template
+/build/update-zip: CWM zip package template
+
+/build/initramfs-*: Unmodified initramfs's extracted from stock EH09, EI20, and EH03 kernels (for reference)
+
+/build/bin: Working directory for build script during kernel build process
+/build/out: Output directory for Odin- and CWM-compatible packages
+
+Files:
+/build.sh: Build script
+/build_log.sh: Log wrapper for build script
 /arch/arm/configs/kgb_defconfig: Default kernel configuration template
