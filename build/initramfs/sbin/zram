@@ -55,14 +55,15 @@ write_boot()
 [ -f $1 ] && echo -n "Overwriting existing boot script at $1... " || echo -n "Installing boot script to $1... "
 echo "#!/system/bin/sh
 #####################################
+# Determines zram size in megabytes #
+# Default is $ZRAM_SIZE_MB          #
+# Reboot for changes to take effect #
+#                                   #
+ZRAM_SIZE_MB=$ZRAM_SIZE_MB
+#                                   #
 # THIS VALUE MUST BE A WHOLE NUMBER #
 # BAD VALUES MAY CAUSE BOOT FAILURE #
 #####################################
-ZRAM_SIZE_MB=$ZRAM_SIZE_MB
-
-# Determines zram size in megabytes.
-# Default is 48.
-# Reboot for changes to take effect.
 
 [ -e /dev/block/zram0 ] || exit
 ZRAM_SIZE_BYTES=\$((\$ZRAM_SIZE_MB * 1024 * 1024))
@@ -81,7 +82,7 @@ fi
 
 if [ "$1" = "enable" ]; then
 	probe_zram && echo "zram is already on. Resetting." && off_zram
-	on_zram && write_boot $ZRAM_SCRIPT
+	on_zram && write_boot $ZRAM_SCRIPT && echo "Edit boot script to change default zram size (48MB)."
 elif [ "$1" = "disable" ]; then
 	probe_zram && off_zram || echo "zram is already off. No need to reset."
 	probe_del_boot $ZRAM_SCRIPT

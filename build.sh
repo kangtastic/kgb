@@ -30,7 +30,6 @@ KERNEL_IMAGE=$ROOTDIR/arch/arm/boot/zImage
 ####################
 # HELPER FUNCTIONS #
 ####################
-
 echo_msg()
 # $1: Message to print to output
 {
@@ -38,7 +37,6 @@ echo "
 *** $1 ***
 "
 }
-
 makezip()
 # $1: Name of output file without extension
 # Creates $OUTDIR/$1.zip
@@ -53,7 +51,6 @@ zip -r -q "$1.zip" .
 mv -f "$1.zip" $OUTDIR/
 popd > /dev/null
 }
-
 makeodin()
 # $1: Name of output file without extension
 # Creates $OUTDIR/$1.tar.md5
@@ -69,7 +66,6 @@ popd
 ####################
 # SCRIPT MAIN BODY #
 ####################
-
 echo "Build script run on $(date -R)"
 
 echo_msg "BUILD START: $KERNEL_VERSION"
@@ -128,6 +124,7 @@ makeodin "KGB-I500-$DATE.$TIME"
 # If you are not me, this ain't here kthx >;]
 if [ -d /mnt/vbs ]; then
 	cp -f "$OUTDIR/KGB-I500-$DATE.$TIME.tar.md5" /mnt/vbs/
+	cp -f "$OUTDIR/KGB-I500-$DATE.$TIME.zip" /mnt/vbs/
 	makeodin "KGB-I500-$DATE"
 fi
 

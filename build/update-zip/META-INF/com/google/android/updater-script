@@ -4,6 +4,8 @@ ui_print(" vvvvvvvvvvv /");
 ui_print("(--[ .]-[ .]");
 ui_print("(______o___)");
 ui_print("");
+ui_print("	For TouchWiz GB ROMs on SCH-I500");
+ui_print("");
 run_program("/sbin/mount", "/dev/block/stl9", "/system");
 show_progress(1.0, 10);
 ui_print("INSTALLING KGB-I500-$DATE KERNEL");
