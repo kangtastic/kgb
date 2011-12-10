@@ -2,7 +2,7 @@
 # Postboot script - for tweaks after the end of init.rc
 
 # Fake init.d support via busybox
-# busybox in /bin is used because it definitely has run-parts
+# busybox in /bin is used because it seems to be reliable
 /bin/run-parts /system/etc/init.d
 
 # Reset internal storage readahead; may have been changed by some dumbfuck's init.d script
@@ -15,3 +15,7 @@ echo 1024 > /sys/devices/virtual/bdi/179:8/read_ahead_kb
 
 # No need to include boot animation killer hack if the boot animation is named playlogos1
 # or samsungani because the ROM kills either automatically
+
+# Delete autoinstall files in initramfs after 15 minutes to free up RAM
+sleep 900
+rm -rf /res/src
