@@ -31,17 +31,6 @@ for FILEPATH in $@; do
 done
 }
 
-auto_install()
-# source, dest, chown, chmod
-{
-if ! cmp /res/src/$1 $2; then
-	mv $2 $2-`date '+%Y-%m-%d_%H-%M-%S'`
-	cp /res/src/$1 $2
-	chown $3 $2
-	chmod $4 $2
-fi
-}
-
 show_options()
 {
 echo "Usage: $1 [OPTION]

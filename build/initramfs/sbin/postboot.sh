@@ -3,7 +3,7 @@
 
 # Fake init.d support via busybox
 # busybox in /bin is used because it seems to be reliable
-/bin/run-parts /system/etc/init.d
+/bin/busybox run-parts /system/etc/init.d
 
 # Reset internal storage readahead; may have been changed by some dumbfuck's init.d script
 # 179:0 corresponds to mmcblk0. On SCH-I500, this is eMMC (/data etc.) and NOT /sdcard

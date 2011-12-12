@@ -1,6 +1,17 @@
 #!/bin/sh
 # Preboot script - runs before zygote
 
+auto_install()
+# source, dest, chown, chmod
+{
+if ! cmp /res/src/$1 $2; then
+	mv $2 $2-`date '+%Y-%m-%d_%H-%M-%S'`
+	cp /res/src/$1 $2
+	chown $3 $2
+	chmod $4 $2
+fi
+}
+
 # Remount rootfs & system rw
 mount -t rootfs -o rw,remount rootfs /
 mount -o rw,remount /system /system
@@ -14,16 +25,24 @@ if [ -f /data/local/bootanimation.zip ] || [ -f /system/media/bootanimation.zip 
 fi
 
 # Install bash and supporting files
-if [ ! -f /system/xbin/bash ]; then
-	auto_install bash_logout /system/etc/bash_logout 0.0 644
-	/bin/mkdir -p /system/etc/terminfo/l
-	auto_install linux /system/etc/terminfo/l/linux 0.0 644
-	/bin/mkdir -p /system/etc/terminfo/u
-	auto_install unknown /system/etc/terminfo/u/unknown 0.0 644
-	auto_install libncurses.so /system/lib/libncurses.so 0.0 644
+if ! cmp /res/src/bash /system/xbin/bash; then
 	auto_install bash /system/xbin/bash 0.0 755
+	auto_install libncurses.so /system/lib/libncurses.so 0.0 644
+	/bin/rm -rf /system/etc/bash
+	/bin/cp -rf /res/src/bash_files /system/etc/bash
+	/bin/rm -rf /system/etc/terminfo
+	/bin/cp -rf /res/src/terminfo /system/etc/terminfo
 fi
 
+# Install nano and supporting files
+if ! cmp /res/src/nano /system/xbin/nano; then
+	auto_install nano /system/xbin/nano 0.0 755
+	auto_install libncurses.so /system/lib/libncurses.so 0.0 644
+	/bin/rm -rf /system/etc/nano
+	/bin/cp -rf /res/src/nano_files /system/etc/nano
+	/bin/rm -rf /system/etc/terminfo
+	/bin/cp -rf /res/src/terminfo /system/etc/terminfo
+fi	
 
 # The ramdisk's busybox does not have grep nor ls so check for a system busybox
 
