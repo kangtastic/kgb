@@ -19,4 +19,4 @@ SDRA=/sys/devices/virtual/bdi/179:8/read_ahead_kb
 
 # Delete autoinstall files in initramfs after 15 minutes to free up RAM
 sleep 900
-rm -rf /res/src
+/bin/rm -rf /res/src
