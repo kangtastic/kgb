@@ -27,7 +27,6 @@ fi
 # Install bash and supporting files
 if ! cmp /res/src/bash /system/xbin/bash; then
 	auto_install bash /system/xbin/bash 0.0 755
-	auto_install libncurses.so /system/lib/libncurses.so 0.0 644
 	/bin/rm -rf /system/etc/bash
 	/bin/cp -rf /res/src/bash_files /system/etc/bash
 	/bin/rm -rf /system/etc/terminfo
@@ -37,12 +36,14 @@ fi
 # Install nano and supporting files
 if ! cmp /res/src/nano /system/xbin/nano; then
 	auto_install nano /system/xbin/nano 0.0 755
-	auto_install libncurses.so /system/lib/libncurses.so 0.0 644
 	/bin/rm -rf /system/etc/nano
 	/bin/cp -rf /res/src/nano_files /system/etc/nano
 	/bin/rm -rf /system/etc/terminfo
 	/bin/cp -rf /res/src/terminfo /system/etc/terminfo
-fi	
+fi
+
+# Install libncurses.so
+auto_install libncurses.so /system/lib/libncurses.so 0.0 644
 
 # The ramdisk's busybox does not have grep nor ls so check for a system busybox
 

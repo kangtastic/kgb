@@ -81,7 +81,3 @@ GTAGS
 
 # KGB Kernel buildlog files
 KGB-I500-*.buildlog.txt
-
-# Ignore working and output directories in build/
-build/bin
-build/out

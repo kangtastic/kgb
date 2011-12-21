@@ -128,7 +128,9 @@ on fs
     # mount yaffs2 mtd@userdata /data nosuid nodev
     # mount yaffs2 mtd@cache /cache nosuid nodev
     mount rfs /dev/block/stl9 /system check=no
+    mount ext4 /dev/block/stl9 /system remount rw
     mount rfs /dev/block/stl9 /system ro remount
+    mount ext4 /dev/block/stl9 /system remount ro
 
 # SEC_DMCRYPT for MC_CRYPT_ROOT before apply_disk_policy or apply_sec_devenc_init
     #chown system system /efs
