@@ -1,54 +1,20 @@
 #!/bin/sh
 # Preboot script - runs before zygote
 
-auto_install()
-# source, dest, chown, chmod
-{
-if ! cmp /res/src/$1 $2; then
-	mv $2 $2-`date '+%Y-%m-%d_%H-%M-%S'`
-	cp /res/src/$1 $2
-	chown $3 $2
-	chmod $4 $2
-fi
-}
-
 # Remount rootfs & system rw
 mount -t rootfs -o rw,remount rootfs /
 mount -o rw,remount /system /system
 
 # Create /etc/init.d as necessary
-/bin/mkdir -p /system/etc/init.d
-
-# Install bootanimation
-if [ -f /data/local/bootanimation.zip ] || [ -f /system/media/bootanimation.zip ] || [ -f /system/media/sanim.zip ]; then
-	auto_install bootanimation /system/bin/bootanimation 0.2000 755
+if ! [ -d /system/etc/init.d ]; then
+	/bin/mkdir -p /system/etc/init.d
+	chown 0.0 /system/etc/init.d
+	chmod 755 /system/etc/init.d
 fi
-
-# Install bash and supporting files
-if ! cmp /res/src/bash /system/xbin/bash; then
-	auto_install bash /system/xbin/bash 0.0 755
-	/bin/rm -rf /system/etc/bash
-	/bin/cp -rf /res/src/bash_files /system/etc/bash
-	/bin/rm -rf /system/etc/terminfo
-	/bin/cp -rf /res/src/terminfo /system/etc/terminfo
-fi
-
-# Install nano and supporting files
-if ! cmp /res/src/nano /system/xbin/nano; then
-	auto_install nano /system/xbin/nano 0.0 755
-	/bin/rm -rf /system/etc/nano
-	/bin/cp -rf /res/src/nano_files /system/etc/nano
-	/bin/rm -rf /system/etc/terminfo
-	/bin/cp -rf /res/src/terminfo /system/etc/terminfo
-fi
-
-# Install libncurses.so
-auto_install libncurses.so /system/lib/libncurses.so 0.0 644
 
 # The ramdisk's busybox does not have grep nor ls so check for a system busybox
-
-# Create resolv.conf, add multicasted Verizon and Google DNS servers as necessary
 if [ -x /system/xbin/busybox ]; then
+# Create resolv.conf, add multicasted Verizon and Google DNS servers as necessary
 	RC=/system/etc/resolv.conf
 
 	[ ! -f $RC ] || ( > $RC && chown 0.0 $RC && chmod 644 $RC )
@@ -63,7 +29,6 @@ if [ -x /system/xbin/busybox ]; then
 		echo "/system/xbin/busybox ls -al \$*" > /system/xbin/ll
 		chmod 755 /system/xbin/ll
 	fi
-
 fi
 
 # Remount system ro,noatime

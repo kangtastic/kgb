@@ -16,7 +16,3 @@ SDRA=/sys/devices/virtual/bdi/179:8/read_ahead_kb
 
 # No need to include boot animation killer hack if the boot animation is named playlogos1
 # or samsungani because the ROM kills either automatically
-
-# Delete autoinstall files in initramfs after 15 minutes to free up RAM
-sleep 900
-/bin/rm -rf /res/src
