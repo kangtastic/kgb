@@ -435,6 +435,21 @@ config KEYPAD_CYPRESS_TOUCH
 	  To compile this driver as a module, choose M here: the
 	  module will be called cypress-touchkey.
 
+config KEYPAD_CYPRESS_TOUCH_HAS_LEGACY_KEYCODE
+	tristate "Cypress touch keypad: legacy keycode support"
+	depends on KEYPAD_CYPRESS_TOUCH
+	default n
+	help
+	  Say Y here if your device uses legacy keycodes.
+
+config KEYPAD_CYPRESS_TOUCH_BLN
+	bool "Cypress touch keypad: use backlight notification"
+	depends on KEYPAD_CYPRESS_TOUCH
+	default y
+	help
+	  Say Y here to enable backlight notifications for Android
+	  LED notification. (modified liblights needed)
+
 config KEYPAD_S3C
 	tristate "S3C keypad support"
 	depends on CPU_S5PC100 || CPU_S5PC110 || CPU_S5P6442 || CPU_S5PV210
