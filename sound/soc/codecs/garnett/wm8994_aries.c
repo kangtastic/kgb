@@ -20,11 +20,8 @@
 #include <plat/map-base.h>
 #include <mach/regs-clock.h>
 #include "wm8994_samsung.h"
-#if defined(CONFIG_MACH_FORTE)
-#include <mach/gpio-forte.h>
-#else
 #include <mach/gpio-atlas.h>
-#endif
+
 /*
  * Debug Feature
  */

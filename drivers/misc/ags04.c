@@ -422,7 +422,7 @@ static ssize_t grip_read_cnt_show(struct device *dev, struct device_attribute *a
 }
 
 
-static DEVICE_ATTR(grip_read_cnt,0664, grip_read_cnt_show, NULL);
+static DEVICE_ATTR(grip_read_cnt,0666, grip_read_cnt_show, NULL);
 
 
 /************************************************************/

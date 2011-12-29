@@ -681,10 +681,6 @@ int bma023_read_accel_avg(struct bma023_data *bma023, int num_avg,
 	for (i = 0; i < num_avg; i++) {
 		/* read 10 acceleration data triples */
 		comres += bma023_measure(bma023, &accel);
-#ifdef  CONFIG_MACH_VICTORY
-		accel.x = -(accel.x);
-		accel.z = -(accel.z);
-#endif
 		if (accel.x > max->x)
 			max->x = accel.x;
 		if (accel.x < min->x)

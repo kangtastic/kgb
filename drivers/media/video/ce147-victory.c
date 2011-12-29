@@ -350,7 +350,7 @@ struct ce147_state {
 	int effect;
 	int wb;
 	struct tm *exifTimeInfo;
-#if defined(CONFIG_ARIES_NTT) ||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) || defined(CONFIG_MACH_FORTE)/* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT) ||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) /* Modify	NTTS1 */
 	int disable_aeawb_lock;
 #endif
 	int exif_ctrl;
@@ -3544,7 +3544,7 @@ static int ce147_set_touch_auto_focus(struct v4l2_subdev *sd,
 	unsigned char ce147_buf_set_touch_af[11] = { 0x00, };
 	unsigned int ce147_len_set_touch_af = 11;
 
-#if defined(CONFIG_ARIES_NTT)||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) || defined(CONFIG_MACH_FORTE)/* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT)||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) /* Modify	NTTS1 */
 	state->disable_aeawb_lock = 1;
 	err = ce147_set_awb_lock(sd, 0);
 	if (err < 0) {
@@ -3618,7 +3618,7 @@ static int ce147_set_focus_mode(struct v4l2_subdev *sd,
 		|| (ctrl->value == FOCUS_MODE_MACRO_DEFAULT)
 		|| (ctrl->value == FOCUS_MODE_AUTO_DEFAULT)) {
 		/* || (ctrl->value == FOCUS_MODE_FD_DEFAULT)) */
-#if defined(CONFIG_ARIES_NTT)||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) || defined(CONFIG_MACH_FORTE)/* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT)||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) /* Modify	NTTS1 */
 		ce147_msg(&client->dev, "%s: unlock\n", __func__);
 		state->disable_aeawb_lock = 0;
 		err = ce147_set_awb_lock(sd, 0);
@@ -4242,7 +4242,7 @@ static int ce147_get_auto_focus_status(struct v4l2_subdev *sd,
 	}
 	ce147_msg(&client->dev, "%s: done\n", __func__);
 
-#if defined(CONFIG_ARIES_NTT)||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) || defined(CONFIG_MACH_FORTE) /* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT)||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) /* Modify	NTTS1 */
 	if ((ctrl->value == AUTO_FOCUS_DONE) && !state->disable_aeawb_lock) {
 		err = ce147_set_awb_lock(sd, 1);
 		if (err < 0) {
@@ -5232,7 +5232,7 @@ static int ce147_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 		err = 0;
 		break;
 
-#if defined(CONFIG_ARIES_NTT)||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) || defined(CONFIG_MACH_FORTE) /* Modify	NTTS1 */
+#if defined(CONFIG_ARIES_NTT)||defined(CONFIG_MACH_ATLAS)||defined(CONFIG_MACH_VICTORY) /* Modify	NTTS1 */
 	case V4L2_CID_CAMERA_AE_AWB_DISABLE_LOCK:
 		state->disable_aeawb_lock = ctrl->value;
 		err = 0;

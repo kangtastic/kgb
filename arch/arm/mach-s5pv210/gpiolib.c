@@ -25,18 +25,12 @@ static struct s3c_gpio_cfg gpio_cfg = {
 	.set_config	= s3c_gpio_setcfg_s3c64xx_4bit,
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
-#ifdef CONFIG_MACH_FORTE
-	.set_pin        = s3c_gpio_setpin_updown,
-#endif
 };
 
 static struct s3c_gpio_cfg gpio_cfg_noint = {
 	.set_config	= s3c_gpio_setcfg_s3c64xx_4bit,
 	.set_pull	= s3c_gpio_setpull_updown,
 	.get_pull	= s3c_gpio_getpull_updown,
-#ifdef CONFIG_MACH_FORTE
-	.set_pin        = s3c_gpio_setpin_updown,
-#endif
 };
 
 static int s5p_gpiolib_eint_to_irq(struct gpio_chip *chip, unsigned int offset)

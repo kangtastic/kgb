@@ -36,9 +36,7 @@ extern struct workqueue_struct *sync_work_queue;
 #if defined(CONFIG_CPU_DIDLE) && defined(CONFIG_CPU_FREQ)
 #include <linux/cpufreq.h>
 #include <mach/cpu-freq-v210.h>
-#ifdef CONFIG_SND_S5P_RP
 extern volatile int s5p_rp_is_running;
-#endif
 static bool dvfs_fixed_by_rp;
 #endif
 
@@ -125,7 +123,7 @@ static void early_suspend(struct work_struct *work)
 
 	queue_work(sync_work_queue, &sync_system_work);
 
-#if defined(CONFIG_CPU_DIDLE) && defined(CONFIG_CPU_FREQ) && defined CONFIG_SND_S5P_RP
+#if defined(CONFIG_CPU_DIDLE) && defined(CONFIG_CPU_FREQ)
 	if (s5p_rp_is_running) {
 		struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 		if (policy == NULL)

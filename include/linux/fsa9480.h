@@ -38,7 +38,6 @@ struct fsa9480_platform_data {
 	void (*reset_cb) (void);
 	void (*set_init_flag) (void);
 	int spk_switch;
-	void (*wimax_cb) (bool attached);
 };
 
 enum {

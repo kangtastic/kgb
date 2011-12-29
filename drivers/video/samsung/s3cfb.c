@@ -44,24 +44,16 @@
 #include <linux/delay.h>
 #include <mach/regs-clock.h>
 #endif
-#include <plat/media.h>
+
 #define BOOT_FB_WINDOW	0
 
 /*
  *  Mark for GetLog (tkhwang)
  */
-#if defined (CONFIG_FB_S3C_TL2796)
+
 extern void tl2796_ldi_stand_by(void);
 extern void tl2796_ldi_wake_up(void);
-#elif defined(CONFIG_FB_S3C_S6D16A0X)
-extern void s6d16a0x_ldi_stand_by(void);
-extern void s6d16a0x_ldi_wake_up(void);
-void lcd_cfg_gpio_early_suspend(void);
-void lcd_cfg_gpio_late_resume(void);
-void s6d16a0x_ldi_disable(void);
-void s6d16a0x_ldi_init(void);
-void s6d16a0x_ldi_enable(void);
-#endif
+
 struct struct_frame_buf_mark {
 	u32 special_mark_1;
 	u32 special_mark_2;
@@ -80,13 +72,8 @@ static struct struct_frame_buf_mark  frame_buf_mark = {
 	.special_mark_3 = (('H' << 24) | ('e' << 16) | ('r' << 8) | ('e' << 0)),
 	.special_mark_4 = (('f' << 24) | ('b' << 16) | ('u' << 8) | ('f' << 0)),
 	.p_fb   = 0,
-#ifdef CONFIG_MACH_FORTE
-	.resX   = 320, 
-	.resY   = 480, 
-#else
 	.resX   = 480,
 	.resY   = 800,
-#endif
 	.bpp    = 32,
 	.frames = 2
 };
@@ -978,22 +965,13 @@ static int s3cfb_sysfs_store_lcd_power(struct device *dev, struct device_attribu
 {
         if (len < 1)
                 return -EINVAL;
-#if defined(CONFIG_FB_S3C_TL2796)
+
         if (strnicmp(buf, "on", 2) == 0 || strnicmp(buf, "1", 1) == 0)
                 tl2796_ldi_wake_up();
         else if (strnicmp(buf, "off", 3) == 0 || strnicmp(buf, "0", 1) == 0)
                 tl2796_ldi_stand_by();
         else
                 return -EINVAL;
-#elif defined(CONFIG_FB_S3C_S6D16A0X)
-        if (strnicmp(buf, "on", 2) == 0 || strnicmp(buf, "1", 1) == 0)
-                s6d16a0x_ldi_wake_up();
-        else if (strnicmp(buf, "off", 3) == 0 || strnicmp(buf, "0", 1) == 0)
-                s6d16a0x_ldi_stand_by();
-        else
-                return -EINVAL;
-#endif
-
 
         return len;
 }
@@ -1133,7 +1111,7 @@ static int __devinit s3cfb_probe(struct platform_device *pdev)
 	s3cfb_display_on(fbdev);
 
 	fbdev->irq = platform_get_irq(pdev, 0);
-	if (request_irq(fbdev->irq, s3cfb_irq_frame,IRQF_SHARED,
+	if (request_irq(fbdev->irq, s3cfb_irq_frame, IRQF_SHARED,
 			pdev->name, fbdev)) {
 		dev_err(fbdev->dev, "request_irq failed\n");
 		ret = -EINVAL;
@@ -1266,9 +1244,6 @@ void s3cfb_early_suspend(struct early_suspend *h)
 		container_of(h, struct s3cfb_global, early_suspend);
 
 	pr_debug("s3cfb_early_suspend is called\n");
-#if defined(CONFIG_FB_S3C_S6D16A0X)
-       s6d16a0x_ldi_disable();
-#endif
 #ifdef CONFIG_FB_S3C_MDNIE
 	writel(0,fbdev->regs + 0x27c);
 	msleep(20);
@@ -1351,16 +1326,12 @@ void s3cfb_late_resume(struct early_suspend *h)
 	
         s3cfb_set_vsync_interrupt(fbdev, 1);
 	s3cfb_set_global_interrupt(fbdev, 1);
-#if defined(CONFIG_FB_S3C_S6D16A0X) 
-        s6d16a0x_ldi_init();
-        s6d16a0x_ldi_enable();
-#endif
+
         if (pdata->backlight_on)
 		pdata->backlight_on(pdev);
-#if !defined(CONFIG_FB_S3C_S6D16A0X)
+
 	if (pdata->reset_lcd)
 		pdata->reset_lcd(pdev);
-#endif
 
 	pr_info("s3cfb_late_resume is complete\n");
 	return ;

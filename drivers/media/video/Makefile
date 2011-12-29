@@ -76,10 +76,6 @@ obj-$(CONFIG_VIDEO_MT9V011) += mt9v011.o
 
 ifeq ($(TARGET_PRODUCT),SCH-I500)
 obj-$(CONFIG_VIDEO_CE147) += ce147-atlas.o
-else ifeq ($(TARGET_PRODUCT),SCH-R910)
-obj-$(CONFIG_VIDEO_CE147) +=ce147-forte.o
-else ifeq ($(TARGET_PRODUCT),SCH-I500R)
-obj-$(CONFIG_VIDEO_CE147) += ce147-atlas.o
 else ifeq ($(TARGET_PRODUCT),SCH-I400)
 obj-$(CONFIG_VIDEO_CE147) += ce147-garnett.o
 else ifeq ($(TARGET_PRODUCT),SPH-D700)
@@ -100,7 +96,6 @@ obj-$(CONFIG_SOC_CAMERA_TW9910)		+= tw9910.o
 
 obj-$(CONFIG_VIDEO_S5KA3DFX) 	+= s5ka3dfx.o
 obj-$(CONFIG_VIDEO_S5K4ECGX) 	+= s5k4ecgx.o
-obj-$(CONFIG_VIDEO_S5K5CCGX) 	+= s5k5ccgx.o
 # And now the v4l2 drivers:
 
 obj-$(CONFIG_VIDEO_BT848) += bt8xx/

@@ -110,13 +110,7 @@
 #define INT_DETACH		(1 << 1)
 #define INT_ATTACH		(1 << 0)
 
-#define USB_CABLE_50K   1
-#define USB_CABLE_255K  2
-#define CABLE_DISCONNECT        0
-
 #define DRIVER_NAME		"usb_configuration"
-#define WIMAX_CABLE_50K       1553
-#define WIMAX_CABLE_50K_DIS   1567
 
 struct fsa9480_usbsw {
 	struct i2c_client		*client;
@@ -131,32 +125,11 @@ struct switch_dev indicator_dev;
 static int micro_usb_status;
 static int dock_status = 0;
 static int MicroJigUARTOffStatus=0;
-unsigned int adc_fsa;
 
-extern struct switch_dev *switch_dev;
-
-/* To support Wimax Cable */
-struct switch_dev wimax_cable = {
-                .name = "wimax_cable",
-};
 
 #ifdef _SUPPORT_SAMSUNG_AUTOINSTALLER_
 extern int askon_status;
 #endif
-/*********for WIMAX USB MODEM***********/
-int fsa9480_set_ctl_register(void)
-{
-     int ret=0;
-     struct i2c_client *client = local_usbsw->client;
-     if (adc_fsa == WIMAX_CABLE_50K)
-	     fsa9480_manual_switching(SWITCH_PORT_USB);
-     else 
-	     ret = i2c_smbus_write_byte_data(client, FSA9480_REG_CTRL,0x1E);
-     if (ret < 0)
-	     dev_err(&client->dev, "%s: err %d\n", __func__, ret);
-}
-EXPORT_SYMBOL(fsa9480_set_ctl_register);
-/***************************/
 
 void UsbIndicator(u8 state)
 {
@@ -254,20 +227,6 @@ static ssize_t print_switch_state(struct switch_dev *sdev, char *buf)
 }
 
 #endif
-
-static ssize_t wimax_cable_type(struct switch_dev *sdev, char *buf)
-{
-
-	if (sdev->state == USB_CABLE_50K)
-		sprintf(buf, "%s\n", "authcable");
-	else if (sdev->state == USB_CABLE_255K)
-		sprintf(buf, "%s\n", "wtmcable");
-	else
-		sprintf(buf, "%s\n", "Disconnected");
-
-	return sprintf(buf, "%s\n", buf);
-}
-
 static ssize_t fsa9480_show_control(struct device *dev,
 				   struct device_attribute *attr,
 				   char *buf)
@@ -456,17 +415,6 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 	struct fsa9480_platform_data *pdata = usbsw->pdata;
 	struct i2c_client *client = usbsw->client;
 
-#ifdef CONFIG_MACH_VICTORY
-	adc_fsa  = i2c_smbus_read_word_data(client, FSA9480_REG_ADC);
-	if (adc_fsa < 0)
-		dev_err(&client->dev, "%s: err %d\n", __func__, adc_fsa);
-	if ( adc_fsa == WIMAX_CABLE_50K){
-		switch_set_state(&wimax_cable, USB_CABLE_50K);
-	} else if (adc_fsa == WIMAX_CABLE_50K_DIS) {
-		fsa9480_manual_switching(SWITCH_PORT_AUTO);
-		switch_set_state(&wimax_cable, CABLE_DISCONNECT);
-	} 
-#endif
 	device_type = i2c_smbus_read_word_data(client, FSA9480_REG_DEV_T1);
 	if (device_type < 0)
 		dev_err(&client->dev, "%s: err %d\n", __func__, device_type);
@@ -479,11 +427,7 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 	/* Attached */
 	if (val1 || val2) {
 		/* USB */
-#ifdef CONFIG_MACH_VICTORY
-		if (val1 & DEV_T1_USB_MASK){
-#else		
-			if (val1 & DEV_T1_USB_MASK || val2 & DEV_T2_USB_MASK ) {
-#endif
+		if (val1 & DEV_T1_USB_MASK || val2 & DEV_T2_USB_MASK) {
 			if (pdata->usb_cb)
 				pdata->usb_cb(FSA9480_ATTACHED);
 
@@ -502,12 +446,6 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 					dev_err(&client->dev,
 						"%s: err %d\n", __func__, ret);
 			}
-#ifdef CONFIG_MACH_VICTORY
-		} else if ( val2 & DEV_T2_USB_MASK ) {
-			if (pdata->wimax_cb)
-				pdata->wimax_cb(FSA9480_ATTACHED);
-				switch_set_state(&wimax_cable, USB_CABLE_255K);
-#endif
 		/* UART */
 		} else if (val1 & DEV_T1_UART_MASK || val2 & DEV_T2_UART_MASK) {
 			if(val2 & DEV_T2_UART_MASK)
@@ -596,23 +534,12 @@ static void fsa9480_detect_dev(struct fsa9480_usbsw *usbsw)
 	/* Detached */
 	} else {
 		/* USB */
-#ifdef CONFIG_MACH_VICTORY
-		if (usbsw->dev1 & DEV_T1_USB_MASK){
-#else		
 		if (usbsw->dev1 & DEV_T1_USB_MASK ||
 				usbsw->dev2 & DEV_T2_USB_MASK) {
-#endif
 			micro_usb_status = 0;
 			UsbIndicator(0);
 			if (pdata->usb_cb)
 				pdata->usb_cb(FSA9480_DETACHED);
-#ifdef CONFIG_MACH_VICTORY		
-        	/* USB JIG */
-		} else if (usbsw->dev2 & DEV_T2_USB_MASK) {
-			if (pdata->wimax_cb)
-				pdata->wimax_cb(FSA9480_DETACHED);
-			switch_set_state(&wimax_cable, CABLE_DISCONNECT);
-#endif
 		/* UART */
 		} else if (usbsw->dev1 & DEV_T1_UART_MASK ||
 				usbsw->dev2 & DEV_T2_UART_MASK) {
@@ -679,7 +606,7 @@ static void fsa9480_reg_init(struct fsa9480_usbsw *usbsw)
 	struct i2c_client *client = usbsw->client;
 	unsigned int ctrl = CON_MASK;
 	int ret;
-#if defined (CONFIG_MACH_ATLAS) || defined (CONFIG_MACH_FORTE)
+#ifdef CONFIG_MACH_ATLAS
 	/* mask interrupts (unmask attach/detach only) */
 	ret = i2c_smbus_write_word_data(client, FSA9480_REG_INT1_MASK, 0x1ffc);
 	if (ret < 0)
@@ -815,10 +742,7 @@ static int __devinit fsa9480_probe(struct i2c_client *client,
 	// set fsa9480 init flag.
 	if (usbsw->pdata->set_init_flag)
 		usbsw->pdata->set_init_flag();
-#if defined(CONFIG_MACH_VICTORY)
-	ret = switch_dev_register(&wimax_cable);
-	wimax_cable.print_state = wimax_cable_type;	
-#endif
+
 	return 0;
 
 fail2:
@@ -846,22 +770,10 @@ static int __devexit fsa9480_remove(struct i2c_client *client)
 }
 
 #ifdef CONFIG_PM
-
-static int fsa9480_suspend(struct i2c_client *client, pm_message_t mesg)
-{
-#ifdef CONFIG_MACH_VICTORY 
-	disable_irq(client->irq	);
-#endif
-	return 0;
-}
-
 static int fsa9480_resume(struct i2c_client *client)
 {
 	struct fsa9480_usbsw *usbsw = i2c_get_clientdata(client);
 
-#ifdef CONFIG_MACH_VICTORY
-	enable_irq(client->irq);
-#endif
 	/* device detection */
 	fsa9480_detect_dev(usbsw);
 
@@ -887,7 +799,6 @@ static struct i2c_driver fsa9480_i2c_driver = {
 	},
 	.probe = fsa9480_probe,
 	.remove = __devexit_p(fsa9480_remove),
-	.suspend = fsa9480_suspend,
 	.resume = fsa9480_resume,
 	.id_table = fsa9480_id,
 };

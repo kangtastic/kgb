@@ -16,11 +16,7 @@
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
 #include <linux/videodev2.h>
-#ifdef CONFIG_MACH_FORTE
-#include <linux/videodev2_samsung_forte.h>
-#else
 #include <linux/videodev2_samsung.h>
-#endif // CONFIG_MACH_FORTE
 #include <media/v4l2-ioctl.h>
 #include <plat/fimc.h>
 #include <linux/clk.h>
@@ -34,8 +30,7 @@ static int fimc_querycap(struct file *filp, void *fh,
 
 	fimc_info1("%s: called\n", __func__);
 
-	//strcpy(cap->driver, "Samsung FIMC Driver");
-	strlcpy(cap->driver,"Samsung FIMC Driver", sizeof(cap->driver));
+	strcpy(cap->driver, "Samsung FIMC Driver");
 	strlcpy(cap->card, ctrl->vd->name, sizeof(cap->card));
 	sprintf(cap->bus_info, "FIMC AHB-bus");
 

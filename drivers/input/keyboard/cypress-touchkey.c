@@ -43,6 +43,7 @@
 #define OLD_BACKLIGHT_ON	0x1
 #define OLD_BACKLIGHT_OFF	0x2
 
+#define FORCE_RESET		1
 #define DEVICE_NAME "cypress-touchkey"
 
 struct cypress_touchkey_devdata {
@@ -338,6 +339,7 @@ static irqreturn_t touchkey_interrupt_handler(int irq, void *touchkey_devdata)
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void cypress_touchkey_early_suspend(struct early_suspend *h)
 {
+	int ret; 
 	struct cypress_touchkey_devdata *devdata =
 		container_of(h, struct cypress_touchkey_devdata, early_suspend);
 
@@ -348,6 +350,9 @@ static void cypress_touchkey_early_suspend(struct early_suspend *h)
 
 	disable_irq(devdata->client->irq);
 
+	ret = i2c_touchkey_write(devdata, &devdata->backlight_on, 0);
+	dev_err(&devdata->client->dev,"%s: Touch Key led ON ret = %d\n",__func__, ret);
+
 	if(devdata->pdata->touchkey_onoff)
 		devdata->pdata->touchkey_onoff(TOUCHKEY_OFF);
 
@@ -356,6 +361,7 @@ static void cypress_touchkey_early_suspend(struct early_suspend *h)
 
 static void cypress_touchkey_early_resume(struct early_suspend *h)
 {
+	int ret;
 	struct cypress_touchkey_devdata *devdata =
 		container_of(h, struct cypress_touchkey_devdata, early_suspend);
 	
@@ -374,17 +380,26 @@ static void cypress_touchkey_early_resume(struct early_suspend *h)
 		return;
 	}
 	#endif
-	devdata->is_dead = false;
-	enable_irq(devdata->client->irq);
-	devdata->is_powering_on = false;
 
 	if (devdata->is_delay_led_on){
-		int ret;
-		msleep(30); // touch power on time
 		ret = i2c_touchkey_write(devdata, &devdata->backlight_on, 1);
 		dev_err(&devdata->client->dev,"%s: Touch Key led ON ret = %d\n",__func__, ret);
+#if FORCE_RESET
+		if(ret != 0)
+		{
+			devdata->pdata->touchkey_onoff(TOUCHKEY_OFF);
+			devdata->pdata->touchkey_onoff(TOUCHKEY_ON);
+			printk("%s: Touch Key Force Reset",__func__);
+			ret = i2c_touchkey_write(devdata, &devdata->backlight_on, 1);
+			dev_err(&devdata->client->dev,"%s: Touch Key led ON ret = %d\n",__func__, ret);
+		}
+#endif
 	}
 	devdata->is_delay_led_on = false;
+	devdata->is_dead = false;
+	devdata->is_powering_on = false;
+
+	enable_irq(devdata->client->irq);	
 }
 #endif
 
@@ -453,6 +468,7 @@ static int cypress_touchkey_probe(struct i2c_client *client,
 	if(devdata->pdata->touchkey_onoff)
 		devdata->pdata->touchkey_onoff(TOUCHKEY_ON);	
 
+	msleep(100);
 	err = i2c_master_recv(client, data, sizeof(data));
 	if (err < sizeof(data)) {
 		if (err >= 0)
@@ -461,8 +477,8 @@ static int cypress_touchkey_probe(struct i2c_client *client,
 		goto err_read;
 	}
 
-	dev_info(dev, "%s: hardware rev1 = %#02x, rev2 = %#02x\n", __func__,
-				data[1], data[2]);
+	printk("touch_key hardware rev1 = %#02x, rev2 = %#02x\n", data[1], data[2]);
+	
 	if (data[1] < 0xc4 && (data[1] >= 0x8 ||
 				(data[1] == 0x8 && data[2] >= 0x9))) {
 		devdata->backlight_on = BACKLIGHT_ON;

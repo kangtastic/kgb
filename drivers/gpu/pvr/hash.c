@@ -31,8 +31,6 @@
 #include "hash.h"
 #include "osfunc.h"
 
-#define _DISABLE_HASH_RESIZE
-
 #define PRIVATE_MAX(a,b) ((a)>(b)?(a):(b))
 
 #define	KEY_TO_INDEX(pHash, key, uSize) \
@@ -179,9 +177,6 @@ _Rehash (HASH_TABLE *pHash,
 static IMG_BOOL
 _Resize (HASH_TABLE *pHash, IMG_UINT32 uNewSize)
 {
-#ifdef _DISABLE_HASH_RESIZE
-	return IMG_TRUE;
-#endif
 	if (uNewSize != pHash->uSize)
     {
 		BUCKET **ppNewTable;
@@ -221,9 +216,6 @@ HASH_TABLE * HASH_Create_Extended (IMG_UINT32 uInitialLen, IMG_SIZE_T uKeySize, 
 	IMG_UINT32 uIndex;
 
 	PVR_DPF ((PVR_DBG_MESSAGE, "HASH_Create_Extended: InitialSize=0x%x", uInitialLen));
-#ifdef _DISABLE_HASH_RESIZE
-	uInitialLen = 1024;	
-#endif
 
 	if(OSAllocMem(PVRSRV_PAGEABLE_SELECT,
 					sizeof(HASH_TABLE),

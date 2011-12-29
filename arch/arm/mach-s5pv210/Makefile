@@ -45,13 +45,6 @@ obj-$(CONFIG_MACH_CRESPO)	+= crespo-panel.o
 obj-$(CONFIG_MACH_CRESPO)	+= max8893_consumer.o
 obj-$(CONFIG_MACH_CRESPO)	+= dev-aries-phone.o
 
-obj-$(CONFIG_MACH_FORTE)        += mach-forte.o aries-rfkill.o
-obj-$(CONFIG_MACH_FORTE)        += aries-btlpm.o
-obj-$(CONFIG_MACH_FORTE)        += aries-watchdog.o
-obj-$(CONFIG_MACH_FORTE)        += aries-panel.o
-obj-$(CONFIG_MACH_FORTE)        += sec_switch.o
-obj-$(CONFIG_MACH_FORTE)        += max8893_consumer.o
-
 obj-$(CONFIG_MACH_ATLAS)	+= mach-atlas.o aries-rfkill.o
 #obj-$(CONFIG_MACH_ATLAS)	+= aries-vibrator.o
 obj-$(CONFIG_MACH_ATLAS)	+= aries-btlpm.o

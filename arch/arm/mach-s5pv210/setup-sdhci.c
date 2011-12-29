@@ -104,9 +104,9 @@ void s5pv210_setup_sdhci2_cfg_gpio(struct platform_device *dev, int width)
 
 	if(machine_is_herring() || machine_is_crespo() || machine_is_victory())
 		memory_enable = S5PV210_GPG2(2);
-        else if (machine_is_atlas() || machine_is_forte() ||  machine_is_aries()){	
+	else if (machine_is_atlas() ||  machine_is_aries())
 		memory_enable = S5PV210_GPJ2(7);
-	}else
+	else
 		return -1;
 
 
@@ -283,7 +283,6 @@ unsigned int universal_sdhci2_detect_ext_cd(void)
 {
 	unsigned int card_status = 0;
 
-
 #ifdef CONFIG_MMC_DEBUG
 	printk(KERN_DEBUG "Universal :SD Detect function\n");
 	printk(KERN_DEBUG "eint conf %x  eint filter conf %x",
@@ -293,11 +292,8 @@ unsigned int universal_sdhci2_detect_ext_cd(void)
 #endif
 	if (machine_is_crespo() || machine_is_victory())
 		card_status = gpio_get_value(S5PV210_GPH1(0)) & (1 << 0);
-	else if(machine_is_atlas())
+	else
 		card_status = gpio_get_value(S5PV210_GPH3(4));
-	else if(machine_is_forte())
-		card_status = gpio_get_value(S5PV210_GPH3(7)) & (1 << 7);
-	
 	printk(KERN_DEBUG "Universal : Card status %d\n", card_status ? 0 : 1);
 	return card_status ? 0 : 1;
 
@@ -314,12 +310,7 @@ void universal_sdhci2_cfg_ext_cd(void)
 		s3c_gpio_cfgpin(S5PV210_GPH3(4),S3C_GPIO_SFN(0xf));
 		set_irq_type(IRQ_EINT(28), IRQ_TYPE_EDGE_BOTH);
 		s3c_gpio_setpull(S5PV210_GPH3(4), S3C_GPIO_PULL_NONE);
-	}else if (machine_is_forte()) {
-                s3c_gpio_cfgpin(S5PV210_GPH3(7),S3C_GPIO_SFN(0xf));
-                set_irq_type(IRQ_EINT(31), IRQ_TYPE_EDGE_BOTH);
-                s3c_gpio_setpull(S5PV210_GPH3(7), S3C_GPIO_PULL_NONE);
-
-        }else
+	} else
 		if (machine_is_victory()) {
 			s3c_gpio_cfgpin(S5PV210_GPH1(0), S3C_GPIO_SFN(0xf));
 			s3c_gpio_setpull(S5PV210_GPH1(0), S3C_GPIO_PULL_NONE);
@@ -364,9 +355,7 @@ void s3c_sdhci_set_platdata(void)
 		hsmmc2_platdata.ext_cd = IRQ_EINT(28);
 	}else if (machine_is_crespo()|| machine_is_victory()) {
 		hsmmc2_platdata.ext_cd = IRQ_EINT8;
-	}else if (machine_is_forte()) 
-		hsmmc2_platdata.ext_cd = IRQ_EINT(31);
-	
+	}
         hsmmc2_platdata.cfg_ext_cd = universal_sdhci2_cfg_ext_cd;
         hsmmc2_platdata.detect_ext_cd = universal_sdhci2_detect_ext_cd;
 

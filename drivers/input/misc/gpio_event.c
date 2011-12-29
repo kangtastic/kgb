@@ -24,10 +24,6 @@
 #include <mach/gpio.h>
 #include <plat/gpio-cfg.h>
 
-#ifdef CONFIG_S5PV210_GARNETT_DELTA 
-extern void keypad_resume();
-extern void keypad_suspend();
-#endif
 
 struct gpio_event {
 	struct gpio_event_input_devs *input_devs;
@@ -287,27 +283,9 @@ static int gpio_event_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-static int s3c_keypad_suspend(struct platform_device *dev, pm_message_t state)
-{
-	keypad_suspend();
-	return 0;
-}
-
-static int s3c_keypad_resume(struct platform_device *dev)
-{
-	keypad_resume();
-	return 0;
-}
-#endif
-
 static struct platform_driver gpio_event_driver = {
 	.probe		= gpio_event_probe,
 	.remove		= gpio_event_remove,
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-	.suspend	= s3c_keypad_suspend,
-	.resume		= s3c_keypad_resume,
-#endif
 	.driver		= {
 		.name	= GPIO_EVENT_DEV_NAME,
 	},

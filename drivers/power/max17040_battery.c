@@ -160,7 +160,7 @@ static void max17040_get_soc(struct i2c_client *client)
 	if (adj_soc % 100 >= 50)
 		soc += 1;
 
-#elif defined (CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_FORTE)
+#elif defined (CONFIG_MACH_ATLAS)
 	pure_soc = msb * 100 + ((lsb * 100) / 256);
 
 	if (pure_soc >= 100)

@@ -27,10 +27,8 @@
 #include <asm/mach/arch.h>
 #include <mach/param.h>
 #include <mach/gpio.h>
-#if defined(CONFIG_MACH_ATLAS)
+#ifdef CONFIG_MACH_ATLAS
 #include <mach/gpio-atlas.h>
-#elif defined(CONFIG_MACH_FORTE)
-#include <mach/gpio-forte.h>
 #else 
 #include <mach/gpio-victory.h>
 #endif
@@ -77,7 +75,7 @@ static ssize_t HWrevision_store(
         return 0;
 }
 /*sysfs for HW Board revision */
-static DEVICE_ATTR(HWrevision, 0664, HWrevision_show, HWrevision_store);
+static DEVICE_ATTR(HWrevision, S_IRUGO |S_IWUGO | S_IRUSR | S_IWUSR, HWrevision_show, HWrevision_store);
 #endif //CONFIG_S5PV210_GARNETT_DELTA
 
 
@@ -96,8 +94,6 @@ static void usb_switch_mode(struct sec_switch_struct *secsw, int mode)
                 fsa9480_manual_switching(SWITCH_PORT_AUDIO);
                 else if (machine_is_atlas())
                 fsa9480_manual_switching(SWITCH_PORT_VAUDIO);
-                else if (machine_is_forte())
-                fsa9480_manual_switching(SWITCH_PORT_AUDIO);
 	}
 }
 

@@ -1599,16 +1599,9 @@ static int do_inquiry(struct fsg_common *common, struct fsg_buffhd *bh)
              		strlcpy(product_disk_id, "SPH-D700 Card", 14);
                 	break;
 	#else
-		#if defined(CONFIG_S5PV210_GARNETT_DELTA)
-                case 0:         //UMS_CDROM_LUNS:
-                        strlcpy(product_disk_id, "SCH-I400 Card", 14);
-                        break; 
-		#else
 		 case 0:         //UMS_CDROM_LUNS:
                         strlcpy(product_disk_id, "SCH-I500 Card", 14);
                         break;
-
-		#endif
 	#endif
 		default:
                 	break;

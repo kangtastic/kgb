@@ -206,24 +206,6 @@ config MACH_ATLAS
 	help
 	  Machine support for Atlas.
 
-config MACH_FORTE
-        bool "FORTE"
-        select CPU_S5PV210
-        select ARCH_DISCONTIGMEM_ENABLE
-        select S3C_DEV_WDT
-        select HAVE_S3C2410_WATCHDOG
-        select S3C_DEV_I2C1
-        select S3C_DEV_I2C2
-        select HAVE_PWM
-        select ARCH_HAS_CPUFREQ
-        select S3C_DEV_HSMMC
-        select S3C_DEV_HSMMC1 if !S5PV210_SD_CH0_8BIT
-        select S3C_DEV_HSMMC2
-        select S5PV210_SETUP_SDHCI
-        select S5PV210_POWER_DOMAIN
-        help
-          Machine support for Forte.
-
 config MACH_VICTORY
 	bool "Victory"
 	select CPU_S5PV210
@@ -254,20 +236,6 @@ config MACH_ATLAS_USCC
         default n
         help
                 Enables to include the USCC Carrier Feature               
-
-config MACH_ATLAS_CS
-        depends on MACH_ATLAS
-        bool "select CS Cellular South Feature"
-        default n
-        help
-                Enables to include the CS Carrier Feature
-
-config MACH_ATLAS_ACG
-        depends on MACH_ATLAS
-        bool "select ACG  Feature"
-        default n
-        help
-                Enables to include the ACG Carrier Feature
 
 config S5PV210_SETUP_FB
 	bool

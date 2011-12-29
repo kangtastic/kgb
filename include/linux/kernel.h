@@ -308,13 +308,8 @@ static inline void console_silent(void)
 
 static inline void console_verbose(void)
 {
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-	if (console_loglevel)
-		console_loglevel = 1;
-#else
 	if (console_loglevel)
 		console_loglevel = 15;
-#endif
 }
 
 extern void bust_spinlocks(int yes);

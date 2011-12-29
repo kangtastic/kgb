@@ -2559,7 +2559,7 @@ static void init_hw_setting(void)
 
 	s3c_gpio_cfgpin(GPIO_ONEDRAM_INT_N, S3C_GPIO_SFN(GPIO_ONEDRAM_INT_N_AF));
 	s3c_gpio_setpull(GPIO_ONEDRAM_INT_N, S3C_GPIO_PULL_NONE); 
-	set_irq_type(IRQ_ONEDRAM_INT_N, IRQ_TYPE_EDGE_FALLING);
+	//set_irq_type(IRQ_ONEDRAM_INT_N, IRQ_TYPE_EDGE_FALLING);
 
 	if (gpio_is_valid(GPIO_PHONE_ON)) {
 		if (gpio_request(GPIO_PHONE_ON, "dpram/GPIO_PHONE_ON"))
@@ -2608,7 +2608,7 @@ static int register_interrupt_handler(void)
 //	dpram_clear();
 
 	/* @LDK@ dpram interrupt */
-	retval = request_irq(dpram_irq, dpram_irq_handler, IRQF_DISABLED, "dpram irq", NULL);
+	retval = request_irq(dpram_irq, dpram_irq_handler, IRQF_TRIGGER_LOW, "dpram irq", NULL);
 
 	enable_irq_wake(dpram_irq);
 
@@ -2652,7 +2652,17 @@ static void check_miss_interrupt(void)
 
 static int dpram_suspend(struct platform_device *dev, pm_message_t state)
 {
+	unsigned int dpram_irq = IRQ_ONEDRAM_INT_N;
+	int retval = 0;
+
+
+	disable_irq(dpram_irq);
+	set_irq_type(IRQ_ONEDRAM_INT_N, IRQ_TYPE_EDGE_FALLING);
+	enable_irq(dpram_irq);
+	//enable_irq_wake(dpram_irq);
+
 	gpio_set_value(GPIO_PDA_ACTIVE, GPIO_LEVEL_LOW);
+
 	if(requested_semaphore)
 		printk(KERN_ERR "=====> %s requested semaphore: %d\n", __func__, requested_semaphore);
 	return 0;
@@ -2660,7 +2670,14 @@ static int dpram_suspend(struct platform_device *dev, pm_message_t state)
 
 static int dpram_resume(struct platform_device *dev)
 {
+	unsigned int dpram_irq = IRQ_ONEDRAM_INT_N;
+
+	disable_irq(dpram_irq);
+	set_irq_type(IRQ_ONEDRAM_INT_N, IRQ_TYPE_LEVEL_LOW);
+	enable_irq(dpram_irq);
+
 	gpio_set_value(GPIO_PDA_ACTIVE, GPIO_LEVEL_HIGH);
+	
 	if(requested_semaphore)
 		printk(KERN_ERR "=====> %s requested semaphore: %d\n", __func__, requested_semaphore);
 	check_miss_interrupt();

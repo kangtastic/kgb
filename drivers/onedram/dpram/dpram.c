@@ -3243,7 +3243,7 @@ static void init_hw_setting(void)
 			printk(KERN_ERR "Filed to request GPIO_PHONE_RST_N!\n");
 		gpio_direction_output(GPIO_PHONE_RST_N, GPIO_LEVEL_LOW);
 	}
-	s3c_gpio_setpull(GPIO_PHONE_RST_N, S3C_GPIO_PULL_DOWN); 
+	s3c_gpio_setpull(GPIO_PHONE_RST_N, S3C_GPIO_PULL_NONE); 
 
 	if (gpio_is_valid(GPIO_PDA_ACTIVE)) {
 		if (gpio_request(GPIO_PDA_ACTIVE, "MP03"))

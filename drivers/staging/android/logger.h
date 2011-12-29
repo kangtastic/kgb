@@ -20,7 +20,7 @@
 #include <linux/types.h>
 #include <linux/ioctl.h>
 
-#ifndef CONFIG_MACH_VICTORY
+#if !defined(CONFIG_MACH_VICTORY) && !defined(CONFIG_MACH_ATLAS) 
 #define ADD_SYSTEM_TIMEINFO
 #endif
 

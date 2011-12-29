@@ -188,22 +188,12 @@ static IMG_VOID ResetVSyncFlipItems(S3C_LCD_DEVINFO* psDevInfo)
 	}
 }
 
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-extern char image_update;
-extern char EGL_ready;
-#endif
-
 static IMG_VOID S3C_Flip(S3C_LCD_DEVINFO  *psDevInfo,
 					   S3C_FRAME_BUFFER *fb)
 {
 	struct fb_var_screeninfo sFBVar;
 	int res;
 	unsigned long ulYResVirtual;
-
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-	image_update = 1;
-	EGL_ready = 1;
-#endif
 
 	acquire_console_sem();
 

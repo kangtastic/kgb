@@ -40,7 +40,4 @@ obj-$(CONFIG_BATTERY_S5PC110)	+= s5pc110_battery.o
 ifeq ($(CONFIG_MACH_ATLAS),y)
 obj-$(CONFIG_BATTERY_S5PC110)	+= maxim_dallas.o
 endif
-ifeq ($(CONFIG_MACH_FORTE),y)
-obj-$(CONFIG_BATTERY_S5PC110)   += maxim_dallas.o
-endif
 obj-$(CONFIG_BATTERY_S3C)	+= s3c_fake_battery.o

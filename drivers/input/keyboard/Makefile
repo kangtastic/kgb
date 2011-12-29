@@ -44,4 +44,3 @@ obj-$(CONFIG_KEYPAD_CYPRESS_TOUCH)      += cypress/issp_driver_routines.o
 obj-$(CONFIG_KEYPAD_CYPRESS_TOUCH)      += cypress/issp_main.o
 obj-$(CONFIG_KEYPAD_CYPRESS_TOUCH)      += cypress/issp_routines.o
 obj-$(CONFIG_KEYPAD_S3C_VICTORY)     	+= s3c-keypad.o
-obj-$(CONFIG_KEYPAD_S3C_FORTE)     	+= s3c-keypad-forte.o

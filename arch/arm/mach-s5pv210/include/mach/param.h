@@ -7,7 +7,7 @@
 #define ASM_MACH_PARAM_H
 
 
-#if defined(CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_FORTE)
+#ifdef CONFIG_MACH_ATLAS
 #define _SUPPORT_SAMSUNG_AUTOINSTALLER_
 #endif
 

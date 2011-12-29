@@ -202,7 +202,6 @@ void s3c_csis_start(int lanes, int settle, int align, int width, int height,
 
 static int fimc_camera_init(struct fimc_control *ctrl)
 {
-	struct fimc_global *fimc = get_fimc_dev();
 	int ret;
 
 	fimc_dbg("%s\n", __func__);
@@ -260,7 +259,6 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 {
 	struct v4l2_frmsizeenum cam_frmsize;
 	struct v4l2_control cam_ctrl;
-	struct fimc_global *fimc = get_fimc_dev();
 	int ret;
 	ret = subdev_call(ctrl, video, enum_framesizes, &cam_frmsize);
 	if (ret < 0) {
@@ -268,29 +266,27 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 		if (ret != -ENOIOCTLCMD)
 			return ret;
 	} else {
-		if (ctrl->vt_mode == 1 && fimc->active_camera != 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 270)) {
+		if (vtmode == 1 && device_id != 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 270)) {
 			ctrl->cam->window.left = 136;
 			ctrl->cam->window.top = 0;
 			ctrl->cam->window.width = 368;
 			ctrl->cam->window.height = 480;
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
-			fimc_err("vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
-		} else if (fimc->active_camera != 0) {
+			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
+		} else if (device_id != 0 && vtmode != 1) {
 			ctrl->cam->window.left = 136;
 			ctrl->cam->window.top = 0;
 			ctrl->cam->window.width = 368;
 			ctrl->cam->window.height = 480;
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
-			fimc_err("%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", __func__, ctrl->cam->width, ctrl->cam->height);
+			dev_err(ctrl->dev, "%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", __func__, ctrl->cam->width, ctrl->cam->height);
 		} else {		
 			ctrl->cam->window.left = 0;
 			ctrl->cam->window.top = 0;
 			ctrl->cam->window.width = ctrl->cam->width;
 			ctrl->cam->window.height = ctrl->cam->height;
-			fimc_err("%s, vtmode = %d, device = %d, cam->width = %d, cam->height = %d\n", __func__, ctrl->vt_mode, fimc->active_camera, ctrl->cam->width, ctrl->cam->height);
-			
 		}
 	}
 
@@ -1225,7 +1221,7 @@ int fimc_s_ctrl_capture(void *fh, struct v4l2_control *c)
 		break;
 		
 	case V4L2_CID_CAMERA_VT_MODE:
-		ctrl->vt_mode = c->value;
+		vtmode = c->value;
 		ret = subdev_call(ctrl, core, s_ctrl, c);
 		break;
 
@@ -1541,15 +1537,13 @@ int fimc_streamon_capture(void *fh)
 	struct fimc_control *ctrl = ((struct fimc_prv_data *)fh)->ctrl;
 	struct fimc_capinfo *cap = ctrl->cap;
 	struct v4l2_frmsizeenum cam_frmsize;
-	struct fimc_global *fimc = get_fimc_dev();
-
 	int rot;
 	int ret;
 
 	fimc_dbg("%s\n", __func__);
 	char *ce147 = "CE147 0-003c";
 	device_id = strcmp(ctrl->cam->sd->name, ce147);
-	fimc_dbg("%s, name(%s), device_id(%d), vtmode(%d)\n", __func__, ctrl->cam->sd->name , fimc->active_camera, ctrl->vt_mode);
+	fimc_dbg("%s, name(%s), device_id(%d), vtmode(%d)\n", __func__, ctrl->cam->sd->name , device_id, vtmode);
 
 	if (!ctrl->cam || !ctrl->cam->sd) {
 		fimc_err("%s: No capture device.\n", __func__);
@@ -1580,28 +1574,27 @@ int fimc_streamon_capture(void *fh)
 		if(ret != -ENOIOCTLCMD)
 			return ret;
 	} else {
-		if (ctrl->vt_mode == 1 && fimc->active_camera != 0 && (cap->rotate == 90 || cap->rotate == 270)) {
+		if (vtmode == 1 && device_id != 0 && (cap->rotate == 90 || cap->rotate == 270)) {
 		ctrl->cam->window.left = 136;
 			ctrl->cam->window.top = 0;//
 			ctrl->cam->window.width = 368;
 			ctrl->cam->window.height = 480;
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height = cam_frmsize.discrete.height;
-			fimc_err("vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", cap->rotate, ctrl->cam->width, ctrl->cam->height);
-		} else if (fimc->active_camera != 0) {
+			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", cap->rotate, ctrl->cam->width, ctrl->cam->height);
+		} else if (device_id != 0 && vtmode != 1) {
 			ctrl->cam->window.left = 136;
 			ctrl->cam->window.top = 0;
 			ctrl->cam->window.width = 368;
 			ctrl->cam->window.height = 480;
 			ctrl->cam->width = cam_frmsize.discrete.width;
 			ctrl->cam->height =cam_frmsize.discrete.height;
-			fimc_err("%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", __func__, ctrl->cam->width, ctrl->cam->height);
+			dev_err(ctrl->dev, "%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", __func__, ctrl->cam->width, ctrl->cam->height);
 		} else {
 			ctrl->cam->window.left = 0;
 			ctrl->cam->window.top = 0;
 			ctrl->cam->width = ctrl->cam->window.width = cam_frmsize.discrete.width;
 			ctrl->cam->height = ctrl->cam->window.height = cam_frmsize.discrete.height;
-			fimc_err("%s, vtmode = %d, device = %d, cam->width = %d, cam->height = %d\n", __func__, ctrl->vt_mode, fimc->active_camera, ctrl->cam->width, ctrl->cam->height);
 		}
 	}
 
@@ -1639,7 +1632,7 @@ int fimc_streamon_capture(void *fh)
 
 		fimc_hwset_output_size(ctrl, cap->fmt.width, cap->fmt.height);
 
-		if ((fimc->active_camera != 0)) {
+		if ((device_id != 0) && (vtmode != 1)) {
 			ctrl->cap->rotate = 90;
 			dev_err(ctrl->dev, "%s, rotate 90", __func__);
 		}

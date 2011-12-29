@@ -50,19 +50,16 @@
 #include <mach/regs-fb.h>
 #define BOOT_FB_WINDOW	0
 
-/* ESD */
-char first_spurious_ESD_irq=1;
-EXPORT_SYMBOL(first_spurious_ESD_irq);
-
+#define LCD_ESD_INT   IRQ_EINT10
 
 static struct s3cfb_global *fbdev;
+
 /*
  *  Mark for GetLog (tkhwang)
  */
 
 extern void tl2796_ldi_stand_by(void);
 extern void tl2796_ldi_wake_up(void);
-extern void SetLDIEnabledFlag(int OnOff);
 
 struct struct_frame_buf_mark {
 	u32 special_mark_1;
@@ -971,6 +968,7 @@ static int s3cfb_sysfs_show_lcd_power(struct device *dev, struct device_attribut
 }
 extern void ams397g201_sleep_in(struct device *dev);
 extern void ams397g201_sleep_out(struct device *dev);
+#define LCD_ESD_INT   IRQ_EINT10
 static int s3cfb_sysfs_store_lcd_power(struct device *dev, struct device_attribute *attr, const char *buf, size_t len)
 {
         if (len < 1)
@@ -981,6 +979,7 @@ static int s3cfb_sysfs_store_lcd_power(struct device *dev, struct device_attribu
                 ams397g201_sleep_out(dev);
         else if (strnicmp(buf, "off", 3) == 0 || strnicmp(buf, "0", 1) == 0)
         {
+                disable_irq( LCD_ESD_INT);
                 ams397g201_sleep_in(dev);
         }
         else
@@ -1057,7 +1056,7 @@ static int s3cfb_sysfs_store_key_wakeup(struct device *dev, struct device_attrib
 }
 
 
-static DEVICE_ATTR(key_wakeup, 0664,
+static DEVICE_ATTR(key_wakeup, 0777,
                         s3cfb_sysfs_show_key_wakeup,
                         s3cfb_sysfs_store_key_wakeup);
 
@@ -1116,7 +1115,7 @@ static int s3cfb_sysfs_store_refresh(struct device *dev,
                 refresh, var->pixclock);
 
          s3cfb_set_clock(fbdev);
-         s3cfb_set_clock(var->pixclock);
+
         return len;
 }
 
@@ -1404,9 +1403,7 @@ void s3cfb_early_suspend(struct early_suspend *h)
 	struct s3cfb_global *fbdev =
 		container_of(h, struct s3cfb_global, early_suspend);
 
-	SetLDIEnabledFlag(0);
 	pr_debug("s3cfb_early_suspend is called\n");
-
 #define IRQ_TE_INT (IRQ_EINT_GROUP10_BASE+1) /* F0_1 */
          disable_irq(IRQ_TE_INT);
         
@@ -1415,6 +1412,7 @@ void s3cfb_early_suspend(struct early_suspend *h)
 	memset(fbdev->fb[2]->screen_base, 0, fbdev->fb[2]->fix.smem_len);
 	s3cfb_display_off(fbdev);
 	clk_disable(fbdev->clock);
+        disable_irq( LCD_ESD_INT);
 
 #if 0
 	regulator_disable(fbdev->vlcd);
@@ -1464,7 +1462,7 @@ void s3cfb_late_resume(struct early_suspend *h)
         ams397g201_set_tear_on();
 
         enable_irq(IRQ_TE_INT);
-        first_spurious_ESD_irq=1;
+        enable_irq( LCD_ESD_INT);
        
             
 	for (i = pdata->default_win;
@@ -1483,7 +1481,6 @@ void s3cfb_late_resume(struct early_suspend *h)
 
 	s3cfb_trigger();
 
-	SetLDIEnabledFlag(1);
 	pr_info("s3cfb_late_resume is complete\n");
 	return ;
 }

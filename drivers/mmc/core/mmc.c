@@ -20,7 +20,7 @@
 #include "core.h"
 #include "bus.h"
 #include "mmc_ops.h"
-#if defined(CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_FORTE)
+#ifdef CONFIG_MACH_ATLAS
 #define CONFIG_INAND_VERSION_PATCH
 #endif
 

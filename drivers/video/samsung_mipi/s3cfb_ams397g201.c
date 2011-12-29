@@ -52,6 +52,9 @@
 #define GAMMASET_CONTROL //for 1.9/2.2 gamma control from platform
 #define ACL_ENABLE
 
+#define LCD_ESD_INT   IRQ_EINT10
+//IRQ_EINT(10)
+
 // SERI-START (grip-lcd-lock)
 // add lcd partial constants
 #define DCS_PARTIAL_MODE_ON	0X12
@@ -71,19 +74,12 @@
 
 #define AMS403GF01_GAMMA_PARAM_SET_DATA_COUNT       26
 
-/* ESD */
-#define LCD_ESD_INT   IRQ_EINT10
-extern char first_spurious_ESD_irq;
-extern int s5p_dsim_Initialise();
-extern int enable_clk_dsim(int enable);
-
 int s3c_gpio_int_flt(unsigned int pin, unsigned int config);
 
 /* Indicates the state of the device */
 
 volatile unsigned char bFrameDone = 1;
 int current_gamma_value = -1;
-char lcd_on_off=1;	
 int on_19gamma = 0;
 int bd_brightness = 0;
 static struct timer_list polling_timer;
@@ -237,11 +233,6 @@ static void ams397g201_display_off(struct device *dev)
 
 }
 
-void ams397g201_sw_reset(struct device *dev)
-{
-	ddi_pd->cmd_write(ddi_pd->dsim_base, DCS_WR_NO_PARA, 0x1, 0);
-
-}
 void ams397g201_sleep_in(struct device *dev)
 {
 	ddi_pd->cmd_write(ddi_pd->dsim_base, DCS_WR_NO_PARA, 0x10, 0);
@@ -371,7 +362,7 @@ static ssize_t gammaset_file_cmd_store(struct device *dev,
 	return size;
 }
 
-static DEVICE_ATTR(gammaset_file_cmd,0664, gammaset_file_cmd_show, gammaset_file_cmd_store);
+static DEVICE_ATTR(gammaset_file_cmd,0666, gammaset_file_cmd_show, gammaset_file_cmd_store);
 #endif
 
 #ifdef ACL_ENABLE 
@@ -524,7 +515,7 @@ static ssize_t aclset_file_cmd_store(struct device *dev, struct device_attribute
 	return size;
 }
 
-static DEVICE_ATTR(aclset_file_cmd, 0664, aclset_file_cmd_show, aclset_file_cmd_store);
+static DEVICE_ATTR(aclset_file_cmd,0666, aclset_file_cmd_show, aclset_file_cmd_store);
 #endif
 
 static void ETC_CONDITION_SET_1(void)
@@ -706,28 +697,24 @@ static void update_gamma(int gamma_value)
 	gprintk("current_gamma_value is %d \n", current_gamma_value);    
 }
 
-static char work_progress=0;
 //WORK QUEING FUNCTION
 static void ams397g201_esd(void)
 {
         printk("ams397g201_esd \n");
 
         u32 err,intsrc;
-	/* DSIM reset */	
       
-	enable_clk_dsim(0);
-	mdelay(100);
 	
-	lcd_on_off = 0;
-	panel_initialized = 0;
-	enable_clk_dsim(1);
+        err = readl(ddi_pd->dsim_base + S5P_DSIM_INTSRC);
+        printk("ESD_DSIM_INTSRC -> %x \n", intsrc);
+	
+        intsrc = readl(ddi_pd->dsim_base + S5P_DSIM_SWRST);        
+        intsrc  = intsrc | 1 << 16;
+        writel(intsrc, ddi_pd->dsim_base + S5P_DSIM_SWRST);
 
-	/*reset lcd*/
 	tl2796_reset_lcd();
-	mdelay(50);
 
-	/* initialise Dsim */
-	s5p_dsim_Initialise();
+	mdelay(10);
 	
 	lcd_panel_init();
 
@@ -737,14 +724,8 @@ static void ams397g201_esd(void)
         	
 	ams397g201_set_tear_on();
         
-	s3cfb_trigger();
-
-	lcd_on_off = 1;
-	panel_initialized = 1;
-	mdelay(200);
-
 	enable_irq( LCD_ESD_INT);
-	work_progress=0;
+
 }
 
 static DECLARE_WORK(lcd_esd_work, ams397g201_esd);
@@ -754,18 +735,17 @@ static int ams397g201_esd_irq_handler(void)
 {
 	printk("ESD_irq_handler \n");
 
-	disable_irq_nosync( LCD_ESD_INT );
-	if(first_spurious_ESD_irq == 0 && work_progress == 0){
-		work_progress = 1;
+	disable_irq( LCD_ESD_INT);
+
+	if(EGL_ready == 1 )
 		schedule_work(&lcd_esd_work);
-	}
 	else
 		enable_irq( LCD_ESD_INT);
 	
-	first_spurious_ESD_irq = 0;
 	return IRQ_HANDLED;
 }
 
+char lcd_on_off=1;	
 static int ams397g201_panel_init(struct device *dev)
 {
 	lcd_panel_init();
@@ -847,7 +827,6 @@ static irqreturn_t ams397g201_te_interrupt(int irq, void *dev_id)
 
 	if(EGL_ready == 1 )
 		image_update = 0;
-
 	enable_irq(irq);
 
 	return IRQ_HANDLED;
@@ -913,7 +892,7 @@ static int ams397g201_partial_mode_on(struct device *dev, u8 display_area)
 	//enter into partial mode only once each time after it is switched on. So, no need to 
 	//use this msleep() for Garnett.
 	
-	msleep(25);
+	//msleep(25);
 	ams397g201_write_0(DCS_PARTIAL_MODE_ON);	
 
 	return r;
@@ -1133,7 +1112,7 @@ static int s3cfb_sysfs_store_lcd_update(struct device *dev, struct device_attrib
 	return len;
 }
 
-static DEVICE_ATTR(lcd_update, 0664, s3cfb_sysfs_show_lcd_update, s3cfb_sysfs_store_lcd_update);
+static DEVICE_ATTR(lcd_update, 0777, s3cfb_sysfs_show_lcd_update, s3cfb_sysfs_store_lcd_update);
 
 static int ams397g201_probe(struct device *dev)
 {
@@ -1193,10 +1172,10 @@ static int ams397g201_probe(struct device *dev)
 		goto err_te_irq;
 	}	
 
-	#if 1
+	#if 0
 		/* irq for ESD signal */
 		s3c_gpio_cfgpin(S5PV210_GPH1(2), S3C_GPIO_SFN(0xFF));
-		s3c_gpio_setpull(S5PV210_GPH1(2), S3C_GPIO_PULL_UP);
+		s3c_gpio_setpull(S5PV210_GPH1(2), S3C_GPIO_PULL_DOWN);
 
 		set_irq_type(LCD_ESD_INT, IRQ_TYPE_EDGE_RISING);
 	        if( (ret = request_irq(LCD_ESD_INT, ams397g201_esd_irq_handler,IRQF_DISABLED , "LCD_ESD", NULL)) < 0 )
@@ -1205,8 +1184,10 @@ static int ams397g201_probe(struct device *dev)
 	        }
 
 		 disable_irq( LCD_ESD_INT);
+
 		 mdelay(10);
-		 //enable_irq( LCD_ESD_INT);
+			
+		 enable_irq( LCD_ESD_INT);
 	 #endif
 #endif
 	r_lcd_1_8v = regulator_get(dev, "vlcd");
@@ -1298,8 +1279,6 @@ static int ams397g201_suspend(struct device *dev, pm_message_t mesg)
 #ifdef ACL_ENABLE
     update_acl_status(ACL_STATUS_0P);
 #endif
-	ams397g201_sw_reset(dev);
-	msleep(5);
 
 	ams397g201_sleep_in(dev);
 	msleep(120);

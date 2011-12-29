@@ -435,15 +435,12 @@ void s5p_i2s_do_resume(struct snd_soc_dai *dai)
 			writel(i2s->suspend_iismod, i2s->regs + S3C2412_IISMOD);
 			writel(i2s->suspend_iiscon, i2s->regs + S3C2412_IISCON);
 			writel(i2s->suspend_iispsr, i2s->regs + S3C2412_IISPSR);
-#ifdef CONFIG_SND_S5P_RP
 			if (s5p_rp_is_running) {
 				if (!(i2s->suspend_iisahb & (S5P_IISAHB_DMARLD | S5P_IISAHB_DMAEN))) {
 					pr_debug("iis: Warning!! Keep auto-reload & DMA En 0x%x\n", i2s->suspend_iisahb);
 					i2s->suspend_iisahb |= S5P_IISAHB_DMARLD | S5P_IISAHB_DMAEN;
 				}
-			} else 
-#endif
-			{
+			} else {
 				if ((i2s->suspend_iisahb & S5P_IISAHB_DMARLD)) {
 					i2s->suspend_iisahb &= ~S5P_IISAHB_DMARLD;
 					pr_debug("iis: Warning!! Disable auto-reload 0x%x\n", i2s->suspend_iisahb);

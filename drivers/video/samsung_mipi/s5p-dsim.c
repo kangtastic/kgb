@@ -503,6 +503,9 @@ static int s5p_dsim_late_resume_init_dsim(unsigned int dsim_base)
 	};
 
 	s5p_dsim_init_header_fifo();
+	if(system_rev !=3)
+		s5p_dsim_sw_reset(dsim_base);
+	else		
 	s5p_dsim_func_reset(dsim_base);
 	s5p_dsim_dp_dn_swap(dsim_base, dsim.dsim_info->e_lane_swap);
 
@@ -654,7 +657,7 @@ static int s5p_dsim_sysfs_store_partial_mode(struct device *dev,
 	return len;
 }
 
-static DEVICE_ATTR(partial_mode, 0664,
+static DEVICE_ATTR(partial_mode, 0666,
 		s5p_dsim_sysfs_show_partial_mode, s5p_dsim_sysfs_store_partial_mode);
 
 
@@ -698,7 +701,7 @@ static int s5p_dsim_sysfs_store_panel_on(struct device *dev,
 	return len;
 }
 
-static DEVICE_ATTR(panel_on, 0664,
+static DEVICE_ATTR(panel_on, 0666,
 		s5p_dsim_sysfs_show_panel_on, s5p_dsim_sysfs_store_panel_on);
 
 
@@ -1086,32 +1089,6 @@ int s5p_dsim_resume(struct platform_device *pdev)
 #define s5p_dsim_resume NULL
 #endif
 #endif
-
-int s5p_dsim_Initialise()
-{
-	s5p_dsim_late_resume_init_dsim(dsim.reg_base);
-	s5p_dsim_init_link(dsim.reg_base);
-
-	s5p_dsim_set_hs_enable(dsim.reg_base);
-	s5p_dsim_set_data_transfer_mode(dsim.reg_base, DSIM_TRANSFER_BYCPU, 1);
-
-	s5p_dsim_set_display_mode(dsim.reg_base, dsim.dsim_lcd_info, NULL);
-
-	s5p_dsim_set_data_transfer_mode(dsim.reg_base, DSIM_TRANSFER_BYLCDC, 1);
-
- 	s5p_dsim_set_interrupt_mask(dsim.reg_base, AllDsimIntr, 0);
-	return 0;
-}
-
-int enable_clk_dsim(int enable)
-{
-	if(enable)
-		clk_enable(dsim.clock);
-	else
-		clk_disable(dsim.clock);
-		
-	return 0;
-}
 
 extern void ams397g201_display_on(void);
 extern void GAMMA_CONDITION_SET(void);

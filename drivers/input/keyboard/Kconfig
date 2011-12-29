@@ -452,13 +452,8 @@ config KEYPAD_S3C_VICTORY
         bool "Victory S3C Keypad"
         help
         Victory Product
-
-config KEYPAD_S3C_FORTE
-        depends on KEYPAD_S3C
-        bool "Forte S3C Keypad"
-        help
-        Forte Product Key Board
 endif
+
 
 config S3C_KEYPAD_DEBUG
 	bool "Print debug messages for S3C keypad"

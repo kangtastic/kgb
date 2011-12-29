@@ -4644,13 +4644,7 @@ uint8_t i2c_addresses[] =
 
 static	void	__iomem		*gpio_pend_mask_mem;
 
-#if defined (CONFIG_MACH_FORTE)
-#define IRQ_TOUCH_INT       (IRQ_EINT_GROUP6_BASE+3)
-#define INT_PEND_BASE       0xE0200A14
-#define INT_BIT_MASK        (1<<3)
-#else
 #define       INT_PEND_BASE   0xE0200A44
-#endif
 
 uint8_t QT_i2c_address;
 
@@ -5303,9 +5297,7 @@ typedef struct
 	int16_t x;			/*!< X */
 	int16_t y;			/*!< Y */
 } report_finger_info_t;
-#if defined (CONFIG_MACH_FORTE)
-#define MAX_USING_FINGER_NUM    5
-#endif
+
 /**
  * Additional finger status class
  * it hold data related to multiple screen arangement management

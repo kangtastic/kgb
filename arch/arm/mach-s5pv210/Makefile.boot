@@ -17,9 +17,6 @@ params_phys-$(CONFIG_MACH_CRESPO)	:= 0x30000100
 zreladdr-$(CONFIG_MACH_ATLAS)		:= 0x30008000
 params_phys-$(CONFIG_MACH_ATLAS)	:= 0x30000100
 
-zreladdr-$(CONFIG_MACH_FORTE)           := 0x30008000
-params_phys-$(CONFIG_MACH_FORTE)        := 0x30000100
-
 #override for Victory
 zreladdr-$(CONFIG_MACH_VICTORY)		:= 0x30008000
 params_phys-$(CONFIG_MACH_VICTORY)	:= 0x30000100

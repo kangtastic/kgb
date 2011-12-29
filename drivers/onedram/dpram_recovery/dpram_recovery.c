@@ -26,11 +26,11 @@
 #include <linux/proc_fs.h>
 #endif	/* CONFIG_PROC_FS */
 
-#if defined(CONFIG_MACH_FORTE)
-#include <mach/gpio-forte.h>
-#else
+//#if defined(CONFIG_S5PV210_VICTORY)
+//#include <mach/gpio-victory.h>
+//#elif defined(CONFIG_S5PV210_ATLAS)
 #include <mach/gpio-atlas.h>
-#endif
+//#endif
 
 #define _DEBUG_
 

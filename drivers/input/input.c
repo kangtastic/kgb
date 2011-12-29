@@ -36,11 +36,8 @@ MODULE_DESCRIPTION("Input core");
 MODULE_LICENSE("GPL");
 
 #define INPUT_DEVICES	256
-#ifdef CONFIG_MACH_FORTE
-#define QKEY_U          13
-#else
 #define QKEY_U          17
-#endif
+
 /*
  * EV_ABS events which should not be cached are listed here.
  */
@@ -345,7 +342,7 @@ void input_event(struct input_dev *dev,
 #ifdef CONFIG_KERNEL_DEBUG_SEC
 	static bool first = 0, second = 0, third = 0;
 #if defined (CONFIG_KEYPAD_S3C)
-	if (strcmp(dev->name,"s3c-keypad")==0 || strcmp(dev->name,"victory-keypad") == 0 || strcmp(dev->name,"forte-keypad") == 0) {
+	if (strcmp(dev->name,"s3c-keypad")==0 || strcmp(dev->name,"victory-keypad") == 0 ) {
 		if (value) {
 			if (code == KERNEL_SEC_FORCED_UPLOAD_1ST_KEY)
 				first =1;
@@ -353,11 +350,7 @@ void input_event(struct input_dev *dev,
                                 second = true;
                         if (code == QKEY_U)
 				third = true;
-#ifdef CONFIG_MACH_FORTE
-                        if (first == 1 && second == 1 && third == 1){
-#else
 			if (second == 1 && third == 1){
-#endif
 				if ((KERNEL_SEC_DEBUG_LEVEL_MID == kernel_sec_get_debug_level()) ||
 						KERNEL_SEC_DEBUG_LEVEL_HIGH == kernel_sec_get_debug_level()) {
 					/* Display the working callstack for the debugging. */

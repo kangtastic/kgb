@@ -1166,12 +1166,6 @@ config VIDEO_S5K4ECGX_V_1_1
 	---help---
 	  Enabled support for Rev 1.1 sensor
 
-config VIDEO_S5K5CCGX
-        tristate "S5K5CCGX supporting camera driver"
-        depends on I2C && VIDEO_V4L2
-        ---help---
-          This driver supports S5K5CCGX SoC camera module
-
 source "drivers/media/video/samsung/Kconfig"
 
 endif # VIDEO_CAPTURE_DRIVERS

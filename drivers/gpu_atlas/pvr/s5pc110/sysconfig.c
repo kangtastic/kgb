@@ -32,7 +32,7 @@
 #include "sgxinfokm.h"
 #include "pdump_km.h"
 #include "servicesext.h"
-
+#include "mutex.h"
 
 #if defined(SLSI_S5PC110)
 #include <linux/platform_device.h>
@@ -66,8 +66,11 @@
 typedef struct _SYS_SPECIFIC_DATA_TAG_
 {
 	IMG_UINT32 ui32SysSpecificData;
-
+#if defined(SYS_CUSTOM_POWERLOCK_WRAP)
+    struct mutex sPowerLock;
+#endif
 } SYS_SPECIFIC_DATA;
+
 #define SYS_SPECIFIC_DATA_ENABLE_IRQ		0x00000001UL
 #define SYS_SPECIFIC_DATA_ENABLE_LISR		0x00000002UL
 #define SYS_SPECIFIC_DATA_ENABLE_MISR		0x00000004UL
@@ -118,29 +121,12 @@ static PVRSRV_ERROR DisableSGXClocks(void)
 
 static PVRSRV_ERROR SysLocateDevices(SYS_DATA *psSysData)
 {
-//	PVRSRV_ERROR eError;
-//	IMG_CPU_PHYADDR sCpuPAddr;
-
 	PVR_UNREFERENCED_PARAMETER(psSysData);
-
-
-#if 0
-	
-	gsSGXDeviceMap.ui32Flags = 0x0;
-	sCpuPAddr.uiAddr = SGX540_BASEADDR;
-	gsSGXDeviceMap.sRegsCpuPBase = sCpuPAddr;
-	gsSGXDeviceMap.sRegsSysPBase = SysCpuPAddrToSysPAddr(gsSGXDeviceMap.sRegsCpuPBase);;
-	gsSGXDeviceMap.ui32RegsSize = SGX_REG_SIZE;
-//	gsSGXDeviceMap.pvRegsCpuVBase = (IMG_CPU_VIRTADDR)io;
-
-#else
 
 	gsSGXDeviceMap.sRegsSysPBase.uiAddr = SGX540_BASEADDR;
 	gsSGXDeviceMap.sRegsCpuPBase = SysSysPAddrToCpuPAddr(gsSGXDeviceMap.sRegsSysPBase);
 	gsSGXDeviceMap.ui32RegsSize = SGX_REG_SIZE;
 	gsSGXDeviceMap.ui32IRQ = SGX540_IRQ;
-#endif
-
 
 #if defined(SGX_FEATURE_HOST_PORT)
 	
@@ -155,15 +141,10 @@ static PVRSRV_ERROR SysLocateDevices(SYS_DATA *psSysData)
 	gsSGXDeviceMap.sLocalMemCpuPBase.uiAddr = 0;
 	gsSGXDeviceMap.ui32LocalMemSize = 0;
 
-	
 	gsSGXDeviceMap.ui32IRQ = SGX540_IRQ;
-
-	
 
 	return PVRSRV_OK;
 }
-
-
 
 PVRSRV_ERROR SysInitialise()
 {
@@ -172,6 +153,7 @@ PVRSRV_ERROR SysInitialise()
 	PVRSRV_DEVICE_NODE	*psDeviceNode;
 	SGX_TIMING_INFORMATION*	psTimingInfo;
 	struct platform_device	*pdev;
+	SYS_SPECIFIC_DATA * psSysSpecData;
 
 	gpsSysData = &gsSysData;
 	OSMemSet(gpsSysData, 0, sizeof(SYS_DATA));
@@ -189,6 +171,7 @@ PVRSRV_ERROR SysInitialise()
 		return PVRSRV_ERROR_INIT_FAILURE;
 	}
 
+
 	EnableSGXClocks();
 
 	eError = OSInitEnvData(&gpsSysData->pvEnvSpecificData);
@@ -199,25 +182,13 @@ PVRSRV_ERROR SysInitialise()
 		gpsSysData = IMG_NULL;
 		return eError;
 	}
-#if defined(SGX540)
-//printk("SGX540 defined\n");
-#endif	
-//printk("SGX_CORE_REV=%d\n",SGX_CORE_REV);
-#if defined(SGX_FEATURE_SYSTEM_CACHE)
-//printk("SGX_FEATURE_SYSTEM_CACHE defined!!!!!!!!!!!!!!\n");
-#if defined(FIX_HW_BRN_25659)
-//printk("FIX_HW_BRN_25659 defined!!!!!!!!!!!!!!\n");
-
-#endif
-#endif
-
-#if defined(SGX_BYPASS_SYSTEM_CACHE)
-//	printk("SGX_BYPASS_SYSTEM_CACHE defined!!!!!!!!!!!!!!!\n");
-#endif
 
 	gpsSysData->pvSysSpecificData = (IMG_PVOID)&gsSysSpecificData;
 	OSMemSet(&gsSGXDeviceMap, 0, sizeof(SGX_DEVICE_MAP));
-	
+#if defined(SYS_CUSTOM_POWERLOCK_WRAP)
+	psSysSpecData = (SYS_SPECIFIC_DATA *) gpsSysData->pvSysSpecificData;
+	mutex_init(&psSysSpecData->sPowerLock);
+#endif
 	
 	psTimingInfo = &gsSGXDeviceMap.sTimingInfo;
 	psTimingInfo->ui32CoreClockSpeed = SYS_SGX_CLOCK_SPEED;
@@ -398,11 +369,8 @@ PVRSRV_ERROR SysInitialise()
 		psDeviceNode = psDeviceNode->psNext;
 	}
 
-
-
 	PDUMPINIT();
 
-	
 	eError = PVRSRVInitialiseDevice (gui32SGXDeviceID);
 	if (eError != PVRSRV_OK)
 	{
@@ -459,16 +427,10 @@ PVRSRV_ERROR SysFinalise(IMG_VOID)
 	}
 	gsSysSpecificData.ui32SysSpecificData |= SYS_SPECIFIC_DATA_ENABLE_LISR;
 	
-//	SysEnableInterrupts(gpsSysData);
 	gsSysSpecificData.ui32SysSpecificData |= SYS_SPECIFIC_DATA_ENABLE_IRQ;
 #endif 
 
-	
-#if 0
-	gpsSysData->pszVersionString = SysCreateVersionString(gsSGXDeviceMap.sRegsCpuPBase);
-#else
 	gpsSysData->pszVersionString=version_string;
-#endif
 	if (!gpsSysData->pszVersionString)
 	{
 		PVR_DPF((PVR_DBG_ERROR,"SysFinalise: Failed to create a system version string"));
@@ -482,8 +444,6 @@ PVRSRV_ERROR SysFinalise(IMG_VOID)
 	
 	DisableSGXClocks();
 #endif	
-//	gsSysSpecificData.bSGXInitComplete= IMG_TRUE; don't know
-	
 	return PVRSRV_OK;
 }
 
@@ -547,7 +507,6 @@ PVRSRV_ERROR SysDeinitialise (SYS_DATA *psSysData)
 
 	SysDeinitialiseCommon(gpsSysData);
 
-
 	#if REAL_HARDWARE
 //	iounmap(io);
 //	release_resource(mem);
@@ -570,14 +529,11 @@ PVRSRV_ERROR SysDeinitialise (SYS_DATA *psSysData)
 PVRSRV_ERROR SysGetDeviceMemoryMap(PVRSRV_DEVICE_TYPE eDeviceType,
 									IMG_VOID **ppvDeviceMap)
 {
-
 	switch(eDeviceType)
 	{
 		case PVRSRV_DEVICE_TYPE_SGX:
 		{
-			
 			*ppvDeviceMap = (IMG_VOID*)&gsSGXDeviceMap;
-
 			break;
 		}
 		default:
@@ -594,12 +550,8 @@ IMG_DEV_PHYADDR SysCpuPAddrToDevPAddr (PVRSRV_DEVICE_TYPE eDeviceType,
 										IMG_CPU_PHYADDR CpuPAddr)
 {
 	IMG_DEV_PHYADDR DevPAddr;
-
 	PVR_UNREFERENCED_PARAMETER(eDeviceType);
-
-	
 	DevPAddr.uiAddr = CpuPAddr.uiAddr;
-	
 	return DevPAddr;
 }
 
@@ -607,8 +559,6 @@ IMG_DEV_PHYADDR SysCpuPAddrToDevPAddr (PVRSRV_DEVICE_TYPE eDeviceType,
 IMG_CPU_PHYADDR SysSysPAddrToCpuPAddr (IMG_SYS_PHYADDR sys_paddr)
 {
 	IMG_CPU_PHYADDR cpu_paddr;
-
-	
 	cpu_paddr.uiAddr = sys_paddr.uiAddr;
 	return cpu_paddr;
 }
@@ -617,86 +567,52 @@ IMG_CPU_PHYADDR SysSysPAddrToCpuPAddr (IMG_SYS_PHYADDR sys_paddr)
 IMG_SYS_PHYADDR SysCpuPAddrToSysPAddr (IMG_CPU_PHYADDR cpu_paddr)
 {
 	IMG_SYS_PHYADDR sys_paddr;
-
-	
 	sys_paddr.uiAddr = cpu_paddr.uiAddr;
 	return sys_paddr;
 }
 
-
-
 IMG_DEV_PHYADDR SysSysPAddrToDevPAddr (PVRSRV_DEVICE_TYPE eDeviceType, IMG_SYS_PHYADDR SysPAddr)
 {
 	IMG_DEV_PHYADDR DevPAddr;
-
 	PVR_UNREFERENCED_PARAMETER(eDeviceType);
-
-	
 	DevPAddr.uiAddr = SysPAddr.uiAddr;
-
 	return DevPAddr;
 }
-
-
 
 IMG_SYS_PHYADDR SysDevPAddrToSysPAddr (PVRSRV_DEVICE_TYPE eDeviceType, IMG_DEV_PHYADDR DevPAddr)
 {
 	IMG_SYS_PHYADDR SysPAddr;
-
 	PVR_UNREFERENCED_PARAMETER(eDeviceType);
-
-	
 	SysPAddr.uiAddr = DevPAddr.uiAddr;
-
 	return SysPAddr;
 }
-
-
 
 IMG_VOID SysRegisterExternalDevice(PVRSRV_DEVICE_NODE *psDeviceNode)
 {
 	PVR_UNREFERENCED_PARAMETER(psDeviceNode);
 }
 
-
-
 IMG_VOID SysRemoveExternalDevice(PVRSRV_DEVICE_NODE *psDeviceNode)
 {
 	PVR_UNREFERENCED_PARAMETER(psDeviceNode);
 }
-
-
 
 IMG_UINT32 SysGetInterruptSource(SYS_DATA* psSysData,
 								 PVRSRV_DEVICE_NODE *psDeviceNode)
 {	
 	PVR_UNREFERENCED_PARAMETER(psSysData);
 #if defined(NO_HARDWARE)
-	
 	return 0xFFFFFFFF;
 #else
-	
-	//return psDeviceNode->ui32SOCInterruptBit;
 	return 0x1;
 #endif
 }
-
-
 
 IMG_VOID SysClearInterrupts(SYS_DATA* psSysData, IMG_UINT32 ui32ClearBits)
 {
 	PVR_UNREFERENCED_PARAMETER(psSysData);
 	PVR_UNREFERENCED_PARAMETER(ui32ClearBits);
-
-	//printk("SysClearInterrupts\n");
-#if !defined(NO_HARDWARE)
-//	OSReadHWReg(((PVRSRV_SGXDEV_INFO *)gpsSGXDevNode->pvDevice)->pvRegsBaseKM,
-//										EUR_CR_EVENT_HOST_CLEAR);	//do something here
-#endif
-	
 }
-
-
 
 PVRSRV_ERROR SysSystemPrePowerState(PVRSRV_SYS_POWER_STATE eNewPowerState)
 {
@@ -704,14 +620,11 @@ PVRSRV_ERROR SysSystemPrePowerState(PVRSRV_SYS_POWER_STATE eNewPowerState)
 	return eError;
 }
 
-
 PVRSRV_ERROR SysSystemPostPowerState(PVRSRV_SYS_POWER_STATE eNewPowerState)
 {
 	PVRSRV_ERROR eError = PVRSRV_OK;
 	return eError;
 }
-
-
 
 PVRSRV_ERROR SysDevicePrePowerState(IMG_UINT32			ui32DeviceIndex,
 									PVRSRV_DEV_POWER_STATE		eNewPowerState,
@@ -727,18 +640,14 @@ PVRSRV_ERROR SysDevicePrePowerState(IMG_UINT32			ui32DeviceIndex,
 #if defined(SUPPORT_ACTIVE_POWER_MANAGEMENT)
 	if (eNewPowerState == PVRSRV_DEV_POWER_STATE_OFF)
 	{
-		PVRSRVSetDCState(DC_STATE_FLUSH_COMMANDS);
 		PVR_DPF((PVR_DBG_MESSAGE, "SysDevicePrePowerState: SGX Entering state D3"));
 		DisableSGXClocks();
-		PVRSRVSetDCState(DC_STATE_NO_FLUSH_COMMANDS);
 	}
 #else	
 	PVR_UNREFERENCED_PARAMETER(eNewPowerState);
 #endif   
 	return PVRSRV_OK;
 }
-
-
 
 PVRSRV_ERROR SysDevicePostPowerState(IMG_UINT32			ui32DeviceIndex,
 									PVRSRV_DEV_POWER_STATE		eNewPowerState,
@@ -789,13 +698,34 @@ PVRSRV_ERROR SysOEMFunction(IMG_UINT32	ui32ID,
 }
 
 
-PVRSRV_ERROR SysPowerLockWrap(SYS_DATA unref__ *psSysData)
+PVRSRV_ERROR SysPowerLockWrap(SYS_DATA  *psSysData, IMG_BOOL bTryLock)
 {                                                               
+	SYS_SPECIFIC_DATA *psSysSpecData = (SYS_SPECIFIC_DATA *) psSysData->pvSysSpecificData;
+	if (!in_interrupt())
+	{
+		if (bTryLock)
+		{
+			int locked = mutex_trylock(&psSysSpecData->sPowerLock);
+			if (locked == 0)
+			{
+				return PVRSRV_ERROR_RETRY;
+			}
+		}
+		else
+		{
+			mutex_lock(&psSysSpecData->sPowerLock);
+		}
+	}
 	return PVRSRV_OK;                                       
 }                                                               
                                                                 
-IMG_VOID SysPowerLockUnwrap(SYS_DATA unref__ *psSysData)
+IMG_VOID SysPowerLockUnwrap(SYS_DATA  *psSysData)
 {                                                               
+    SYS_SPECIFIC_DATA *psSysSpecData = (SYS_SPECIFIC_DATA *) psSysData->pvSysSpecificData;
+    if (!in_interrupt())
+    {
+        mutex_unlock(&psSysSpecData->sPowerLock);
+    }
 }                                                               
 
 

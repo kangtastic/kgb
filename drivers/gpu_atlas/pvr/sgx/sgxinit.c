@@ -1746,6 +1746,10 @@ IMG_VOID SGXPanic(PVRSRV_SGXDEV_INFO	*psDevInfo)
 {
 	PVR_LOG(("SGX panic"));
 	SGXDumpDebugInfo(psDevInfo, IMG_FALSE);
+#ifdef DSLSI_S5PC110
+	PVR_LOG(("Sleep 5sec before panic"));
+	msleep(5000);
+#endif
 	OSPanic();
 }
 
@@ -2501,10 +2505,16 @@ PVRSRV_ERROR SGXGetMiscInfoKM(PVRSRV_SGXDEV_INFO	*psDevInfo,
 
 		case SGX_MISC_INFO_PANIC:
 		{
+			if (psDeviceNode->bReProcessDeviceCommandComplete)
+			{
+				PVR_LOG(("User requested SGX panic but attempting SGXScheduleProcessQueuesKM"));
+				SGXScheduleProcessQueuesKM(psDeviceNode);
+			}
+			else
+			{
 			PVR_LOG(("User requested SGX panic"));
-
 			SGXPanic(psDeviceNode->pvDevice);
-
+			}
 			return PVRSRV_OK;
 		}
 

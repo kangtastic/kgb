@@ -96,7 +96,17 @@ static int __devinit i2c_gpio_probe(struct platform_device *pdev)
 	bit_data = kzalloc(sizeof(struct i2c_algo_bit_data), GFP_KERNEL);
 	if (!bit_data)
 		goto err_alloc_bit_data;
-	
+#if defined(CONFIG_MACH_VICTORY)
+if(pdata->sda_pin != 248 && pdata->sda_pin != 247)
+{ 
+	ret = gpio_request(pdata->sda_pin, "sda");
+	if (ret)
+		goto err_request_sda;
+	ret = gpio_request(pdata->scl_pin, "scl");
+	if (ret)
+		goto err_request_scl;
+}
+#else
 	ret = gpio_request(pdata->sda_pin, "sda");
         if (ret)
                 goto err_request_sda;
@@ -104,6 +114,7 @@ static int __devinit i2c_gpio_probe(struct platform_device *pdev)
         if (ret)
                 goto err_request_scl;
 
+#endif
 	if (pdata->sda_is_open_drain) {
 		gpio_direction_output(pdata->sda_pin, 1);
 		bit_data->setsda = i2c_gpio_setsda_val;

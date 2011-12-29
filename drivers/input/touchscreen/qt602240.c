@@ -2747,7 +2747,7 @@ static void _input_report_finger_info(struct i2c_ts_driver * pTsDriver, report_f
     }
 }
 
-void  get_message(struct work_struct * p)
+void  get_message(void)
 {
     unsigned long x, y;
     unsigned int press = 3;
@@ -2762,10 +2762,6 @@ void  get_message(struct work_struct * p)
     uint8_t id = 0;
     int bChangeUpDn= 0;
 #endif
-
-    static long cnt=0;
-    cnt++;
-    disable_irq(qt602240->client->irq);
 
     if (driver_setup == DRIVER_SETUP_OK) {
     #ifdef _SUPPORT_TOUCH_AMPLITUDE_
@@ -2845,8 +2841,7 @@ void  get_message(struct work_struct * p)
                 }
 		 if(readl(gpio_pend_mask_mem)&(0x1<<5))
 			writel(readl(gpio_pend_mask_mem)|(0x1<<5), gpio_pend_mask_mem);
-			s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_SFN(0xf));
-			enable_irq(qt602240->client->irq);
+
 		return ;
             } 
             
@@ -3046,9 +3041,6 @@ void  get_message(struct work_struct * p)
   
    if(readl(gpio_pend_mask_mem)&(0x1<<5))
         writel(readl(gpio_pend_mask_mem)|(0x1<<5), gpio_pend_mask_mem); 
-
-    s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_SFN(0xf));
-    enable_irq(qt602240->client->irq);
 
     return ;
 }
@@ -3280,10 +3272,7 @@ void message_handler(U8 *msg, U8 length)
 
 irqreturn_t qt602240_irq_handler(int irq, void *dev_id)
 {
-
-     s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_INPUT);
-     queue_work(qt602240_wq, &qt602240->ts_event_work);
-	
+    get_message();
 
     return IRQ_HANDLED;
 }
@@ -3404,12 +3393,16 @@ int qt602240_probe(struct i2c_client *client,
     quantum_touch_probe();
 #endif
 
-    disable_irq(qt602240->client->irq);
 
     touchscreen_power_state_on = 1;
     set_tsp_threshhold();
 	
-    ret = request_irq(qt602240->client->irq, qt602240_irq_handler, IRQF_DISABLED, "qt602240 irq", qt602240);
+    set_irq_type(qt602240->pdata->irq, IRQ_TYPE_LEVEL_LOW); // IRQ_TYPE_EDGE_FALLING);
+    s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_SFN(0xf));
+    s3c_gpio_setpull(qt602240->pdata->touch_int, S3C_GPIO_PULL_NONE);
+	
+    ret = request_threaded_irq(qt602240->client->irq, NULL, qt602240_irq_handler, 
+		IRQF_TRIGGER_LOW | IRQF_ONESHOT, "qt602240 irq", qt602240);
     if (ret == 0) {
         dprintk("[TSP] qt602240_probe: Start touchscreen %s\n", qt602240->input_dev->name);
     }
@@ -3417,9 +3410,6 @@ int qt602240_probe(struct i2c_client *client,
         dprintk("[TSP] request_irq failed\n");
     } 
    
-    set_irq_type(qt602240->pdata->irq, IRQ_TYPE_LEVEL_LOW); // IRQ_TYPE_EDGE_FALLING);
-    s3c_gpio_cfgpin(qt602240->pdata->touch_int, S3C_GPIO_SFN(0xf));
-    s3c_gpio_setpull(qt602240->pdata->touch_int, S3C_GPIO_PULL_NONE);
    
     dprintk("%s ,  %d\n",__FUNCTION__, __LINE__ );
 #ifdef USE_TSP_EARLY_SUSPEND

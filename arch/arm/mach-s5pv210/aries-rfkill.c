@@ -46,8 +46,6 @@
 #define IRQ_BT_HOST_WAKE       gpio_to_irq(S5PV210_GPG3(4))
 #elif defined(CONFIG_MACH_VICTORY)
 #define IRQ_BT_HOST_WAKE      IRQ_EINT4
-#elif defined(CONFIG_MACH_FORTE)
-#define IRQ_BT_HOST_WAKE      IRQ_EINT14
 #else		
 #define IRQ_BT_HOST_WAKE      IRQ_EINT(21)
 #endif 

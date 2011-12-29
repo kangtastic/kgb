@@ -308,9 +308,6 @@ irqreturn_t sdhci_irq_cd(int irq, void *dev_id)
 
 	detect = sc->pdata->detect_ext_cd();
 
-	if (sc->host->mmc)
-		sc->host->mmc->rescan_disable = 0;
-	
 	if (detect) {
 		printk(KERN_DEBUG "sdhci: card inserted.\n");
 		sc->host->flags |= SDHCI_DEVICE_ALIVE;
@@ -584,7 +581,6 @@ static int sdhci_s3c_resume(struct platform_device *dev)
 	sdhci_resume_host(host);
 
 	if(pdata && pdata->cfg_ext_cd){
-		host->mmc->rescan_disable = 0;
 		ret = request_irq(pdata->ext_cd, sdhci_irq_cd, IRQF_SHARED, mmc_hostname(host->mmc), sdhci_priv(host));
 		if(ret)
 			return ret;

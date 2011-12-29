@@ -249,7 +249,6 @@ void wm8994_set_fsa9480_enable(int enable);
 void wm8994_set_playback_extra_dock_speaker(struct snd_soc_codec *codec);
 void wm8994_mute_voicecall_path(struct snd_soc_codec *codec, int path);
 void wm8994_set_end_point_volume(struct snd_soc_codec *codec, int path);
-void audio_ctrl_mic_bias_gpio(struct wm8994_platform_data *pdata, int enable);
 #endif
 
 #endif

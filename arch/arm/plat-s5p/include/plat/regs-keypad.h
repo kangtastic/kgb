@@ -23,15 +23,11 @@
 #define S3C_KEYIFCOL		S3C_KEYPADREG(0x08)
 #define S3C_KEYIFROW		S3C_KEYPADREG(0x0C)
 #define S3C_KEYIFFC		S3C_KEYPADREG(0x10)
-
 #if defined CONFIG_MACH_VICTORY
-#define KEYCOL_DMASK            (0xffff)
-#elif defined CONFIG_MACH_FORTE
 #define KEYCOL_DMASK            (0xffff)
 #else
 #define KEYCOL_DMASK            (0xff)
 #endif
-
 #if defined(CONFIG_KEYPAD_S3C_MSM)
 #define KEYROW_DMASK		(0x3fff) /*msm interface for s5pv210 */
 #else

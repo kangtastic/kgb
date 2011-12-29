@@ -129,8 +129,13 @@ s3c_lcd-y := \
 	s3c_lcd/s3c_displayclass.o \
 	s3c_lcd/s3c_lcd.o
 
+#s3c_bc-y := \
+#	s3c_bc/s3c_bc.o \
+#	s3c_bc/s3c_bc_linux.o
+
 obj-$(CONFIG_PVR_PDUMP) += dbgdrv
 
 obj-$(CONFIG_PVR_SGX) += pvrsrvkm.o
 
 obj-$(CONFIG_ARCH_S5PV210) += s3c_lcd.o
+#obj-$(CONFIG_ARCH_S5PV210) += s3c_bc.o

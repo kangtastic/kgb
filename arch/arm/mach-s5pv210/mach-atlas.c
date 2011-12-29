@@ -374,9 +374,9 @@ static struct s3cfb_lcd s6e63m0 = {
 };
 #endif
 
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (12288 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (8688 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (12288 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (8688 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (13312 * SZ_1K) // 13MB
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (21504 * SZ_1K) // 21MB
 #if defined(CONFIG_S5PV210_GARNETT_DELTA)
@@ -384,7 +384,7 @@ static struct s3cfb_lcd s6e63m0 = {
 #else
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (3072 * SZ_1K)
 #endif
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (5012 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (0 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_PMEM (0 * 5550 * SZ_1K) // TV-OUT memory 6MB->0MB
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_GPU1 (3300 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_ADSP (1500 * SZ_1K)
@@ -1637,9 +1637,9 @@ static void touch_keypad_onoff(int onoff)
 	gpio_direction_output(_3_GPIO_TOUCH_EN, onoff);
 
 	if (onoff == TOUCHKEY_OFF)
-		msleep(30);
+		msleep(250);
 	else
-		msleep(25);
+		msleep(100);
 }
 
 static const int touch_keypad_code[] = {

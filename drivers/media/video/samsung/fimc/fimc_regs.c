@@ -13,11 +13,7 @@
 #include <linux/delay.h>
 #include <linux/gpio.h>
 #include <linux/videodev2.h>
-#ifdef CONFIG_MACH_FORTE
-#include <linux/videodev2_samsung_forte.h>
-#else
 #include <linux/videodev2_samsung.h>
-#endif // CONFIG_MACH_FORTE
 #include <linux/io.h>
 #include <mach/map.h>
 #include <plat/regs-fimc.h>

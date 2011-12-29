@@ -202,7 +202,6 @@ static void keypad_timer_handler(unsigned long data)
 	int i,col;
 	struct s3c_keypad *pdata = (struct s3c_keypad *)data;
 	struct input_dev *dev = pdata->dev;
-	static some_keys_pressed = 0;
         #if 0	//suik_Fix
         #ifdef CONFIG_KERNEL_DEBUG_SEC	
 	static bool is_first_key_pressed;
@@ -228,9 +227,6 @@ static void keypad_timer_handler(unsigned long data)
 			if (press_mask & 1) {
 
                                  if(LCD_ON_OFF ==1){
-			if((i+1 == 35) || (i+1 == 36) || i+1 == 46)
-                        some_keys_pressed++;
-			if(some_keys_pressed < 3)
                       	input_report_key(dev,i+1,1);
                              pr_err("[key_press] keycode=%d\n", i+1);
 					}
@@ -262,8 +258,6 @@ static void keypad_timer_handler(unsigned long data)
 			if (release_mask & 1) {
 
                                if(LCD_ON_OFF ==1){
-			       if((i+1 == 35) || (i+1 == 36) || (i+1 == 46))
-			        some_keys_pressed--;
 				input_report_key(dev,i+1,0);
                              pr_err("[key_release] keycode=%d\n", i+1);
 				}
@@ -385,7 +379,6 @@ static int s3c_slidegpio_isr_setup(void *pdev)
 	  printk("\n can_request_irq=%d\n",ret);
 	  ret = request_irq(IRQ_EINT5, s3c_slide_isr, IRQF_DISABLED,
 			  "slide pgio", (void *) pdev);
-	  enable_irq_wake(IRQ_EINT5);
   }
   else
   {

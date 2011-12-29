@@ -125,9 +125,7 @@ static int check_usbotg_op(void)
  * Check power gating : LCD, CAM, TV, MFC, G3D
  * Check clock gating : DMA, USBHOST, I2C
  */
-#ifdef CONFIG_SND_S5P_RP
 extern volatile int s5p_rp_is_running;
-#endif
 extern int s5p_rp_get_op_level(void);
 
 static int check_power_clock_gating(void)

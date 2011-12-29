@@ -139,10 +139,8 @@ void kernel_sec_set_upload_magic_number(void)
 
 	int *magic_virt_addr = (int *)LOKE_BOOT_USB_DWNLD_V_ADDR;
 
-#if defined(CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_VICTORY)
-	*magic_virt_addr = 0;
-	printk(KERN_EMERG"KERNEL:magic_number=0x%x DEBUG LEVEL low!!\n",*magic_virt_addr);
-#else
+#ifndef CONFIG_MACH_ATLAS
+
 	if ((KERNEL_SEC_DEBUG_LEVEL_MID == kernel_sec_get_debug_level()) || 
 			(KERNEL_SEC_DEBUG_LEVEL_HIGH == kernel_sec_get_debug_level())) {
 		*magic_virt_addr = LOKE_BOOT_USB_DWNLDMAGIC_NO; /* SET */
@@ -151,11 +149,18 @@ void kernel_sec_set_upload_magic_number(void)
 		*magic_virt_addr = 0;	
 		printk(KERN_EMERG"KERNEL:magic_number=0x%x DEBUG LEVEL low!!\n",*magic_virt_addr);
 	}
+
+#else
+
+	*magic_virt_addr = 0;
+	printk(KERN_EMERG"KERNEL:magic_number=0x%x DEBUG LEVEL low!!\n",*magic_virt_addr);
+
 #endif
 }
 EXPORT_SYMBOL(kernel_sec_set_upload_magic_number);
 
-#if defined(CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_VICTORY)
+
+#ifdef CONFIG_MACH_ATLAS
 void kernel_sec_set_upload_magic_number_final(void)
 {
 	int *magic_virt_addr = (int*) LOKE_BOOT_USB_DWNLD_V_ADDR;
@@ -174,6 +179,7 @@ void kernel_sec_set_upload_magic_number_final(void)
 }
 EXPORT_SYMBOL(kernel_sec_set_upload_magic_number_final);
 #endif
+
 
 void kernel_sec_get_debug_level_from_boot(void)
 {
@@ -473,20 +479,21 @@ void kernel_sec_hw_reset(bool bSilentReset)
 		kernel_sec_clear_upload_magic_number();
 		printk(KERN_EMERG "(kernel_sec_hw_reset) Upload Magic Code is cleared for silet reset.\n");
 	}
-#if defined(CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_VICTORY) 
+	#ifdef CONFIG_MACH_ATLAS
 	else
 	{
 		kernel_sec_set_upload_magic_number_final();
 		printk(KERN_EMERG "(kernel_sec_hw_reset) Upload Magic Code is set for Upload Mode.\n"); 
-#endif
+	#endif
 		if (gkernel_sec_upload_cause != UPLOAD_CAUSE_FORCED_UPLOAD){
 
 			if (kernel_sec_cable_attach)
 				kernel_sec_clear_upload_magic_number();
 		}
-#if defined(CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_VICTORY)		
+		
+	#ifdef CONFIG_MACH_ATLAS
 	} 
-#endif
+	#endif
 
 	printk(KERN_EMERG "(kernel_sec_hw_reset) %s\n", gkernel_sec_build_info);
 

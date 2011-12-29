@@ -122,7 +122,7 @@ extern struct platform_device s3c_device_usb_mass_storage;
 #    define SAMSUNG_KIES_PRODUCT_ID	0x6877	/* Shrewbury ACM+MTP*/
 #    define SAMSUNG_DEBUG_PRODUCT_ID	0x681C	/* Shrewbury ACM+UMS+ADB*/
 #    define SAMSUNG_UMS_PRODUCT_ID	0x681D
-#   if defined(CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_FORTE)
+#   ifdef CONFIG_MACH_ATLAS
 #    define SAMSUNG_MTP_PRODUCT_ID	0x5A0F  /* MTP Only */ /* match mtp usb product id to Atlas Froyo for VZW */
 #   else
 #    define SAMSUNG_MTP_PRODUCT_ID	0x68A9

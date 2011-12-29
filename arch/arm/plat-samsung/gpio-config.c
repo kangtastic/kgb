@@ -323,20 +323,7 @@ s3c_gpio_pull_t s3c_gpio_getpull_1up(struct s3c_gpio_chip *chip,
 	return pup ? S3C_GPIO_PULL_NONE : S3C_GPIO_PULL_UP;
 }
 #endif /* CONFIG_S3C_GPIO_PULL_UP */
-#ifdef CONFIG_MACH_FORTE
-int s3c_gpio_setpin_updown(struct s3c_gpio_chip *chip,
-                           unsigned int off, s3c_gpio_pull_t level)
-{
-        void __iomem *reg = chip->base + 0x04;
-        u32 lvl;
 
-        lvl = __raw_readl(reg);
-        lvl &= ~(1 << off);
-        lvl |= (level << off);
-        __raw_writel(lvl, reg);
-        return 0;
-}
-#endif
 #ifdef CONFIG_S5P_GPIO_DRVSTR
 s5p_gpio_drvstr_t s5p_gpio_get_drvstr(unsigned int pin)
 {

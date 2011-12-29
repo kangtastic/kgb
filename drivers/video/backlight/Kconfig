@@ -249,13 +249,7 @@ config BACKLIGHT_TOSA
 	help
 	  If you have an Sharp SL-6000 Zaurus say Y to enable a driver
 	  for its backlight
-config BACKLIGHT_BD60910
-        tristate "Rohm BD60910 Backlight Driver"
-        depends on BACKLIGHT_CLASS_DEVICE && I2C
-        default n
-        help
-          If you have an Rohm BD60910 say Y to enable a driver
-          for its backlight
+
 config BACKLIGHT_SAHARA
 	tristate "Tabletkiosk Sahara Touch-iT Backlight Driver"
 	depends on X86

@@ -117,34 +117,6 @@ static const struct voltage_map_desc *ldo_voltage_map[] = {
 };
 
 static struct i2c_client *i2c_info;
-
-/*for WIMAX USB MODEM*******/
-int max8998_read_wimax_reg(u8 reg, u8 *data, u8 length,u8 flag)
-{
-  int ret;
-
-    if(flag == 1)
-    {
-     ret = max8998_bulk_read(i2c_info,reg,length,data);
-     if(ret<0)
-          printk("********error in read bulk data\n");
-    }
-    else
-    {
-
-        ret = max8998_bulk_write(i2c_info,reg,length,data);
-       if(ret<0)
-          printk("********error in write bulk data\n");
-    }
-
-   return ret;
-}
-
-EXPORT_SYMBOL(max8998_read_wimax_reg);
-
-/*for WIMAX USB MODEM*******/
-
-
 static inline int max8998_get_ldo(struct regulator_dev *rdev)
 {
 	return rdev_get_id(rdev);
@@ -1055,7 +1027,7 @@ static int __devexit max8998_pmic_remove(struct platform_device *pdev)
 	return 0;
 }
 
-#if defined(CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_FORTE)
+#ifdef CONFIG_MACH_ATLAS
 static int max8998_pmic_suspend(struct platform_device *pdev, pm_message_t state)
 {
 	int on_off_reg = 0, ret;
@@ -1070,32 +1042,6 @@ static int max8998_pmic_suspend(struct platform_device *pdev, pm_message_t state
                         max8998_write_reg (i2c_info, MAX8998_REG_ONOFF2, on_off_reg);
 			printk("max8998 onoff2 after reset => %x\n", on_off_reg);
         }
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-//turning off LDO17
-#if 1
-        ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF3,  &on_off_reg);
-        if (ret) {
-                printk( "###########Error reading MAX8998_REG_ONOFF3\n");
-        }else{
-                on_off_reg &= ~(1 << 4);
-                max8998_write_reg (i2c_info, MAX8998_REG_ONOFF3, on_off_reg);
-        }
-        //ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF3,  &on_off_reg);
-        //printk("max8998 onoff3 after reset => %x\n", on_off_reg);
-
-//turning off LDO3
-	ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF1,  &on_off_reg);
-        if (ret) {
-                printk( "###########Error reading MAX8998_REG_ONOFF1\n");
-        }else{
-                on_off_reg &= ~(1 << 2);
-                max8998_write_reg (i2c_info, MAX8998_REG_ONOFF1, on_off_reg);
-        }
-        //ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF1,  &on_off_reg);
-        //printk("max8998 onoff1 after reset => %x\n", on_off_reg);
-#endif
-#endif	
-	
 	return 0;
 }
 
@@ -1108,29 +1054,6 @@ static int max8998_pmic_resume(struct platform_device *pdev)
                         printk("Error reading MAX8998_REG_ONOFF2\n");
         }
 	printk("max8998 onoff2 before reset => %x\n", on_off_reg);
-#if 1
-//turning on LDO17
-        ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF3,  &on_off_reg);
-        if (ret) {
-                printk( "###########Error reading MAX8998_REG_ONOFF2\n");
-        }else{
-                on_off_reg |= (1 << 4);
-                max8998_write_reg (i2c_info, MAX8998_REG_ONOFF3, on_off_reg);
-        }
-        //ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF3,  &on_off_reg);
-        //printk("max8998 onoff3 after reset => %x\n", on_off_reg);
-
-//turning on LDO3
-	ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF1,  &on_off_reg);
-        if (ret) {
-                printk( "###########Error reading MAX8998_REG_ONOFF2\n");
-        }else{
-                on_off_reg |= (1 << 2);
-                max8998_write_reg (i2c_info, MAX8998_REG_ONOFF1, on_off_reg);
-        }
-        //ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF1,  &on_off_reg);
-        //printk("max8998 onoff1 after reset => %x\n", on_off_reg);
-#endif
 #endif	
 	return 0;
 }
@@ -1164,15 +1087,6 @@ static int max8998_pmic_suspend(struct platform_device *pdev, pm_message_t state
                         on_off_reg &= ~(0x1) << 3;
                         max8998_write_reg (i2c_info, MAX8998_REG_ONOFF2, on_off_reg);
         }
-        ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF3,  &on_off_reg);
-        if (ret) {
-                        printk( "Error reading MAX8998_REG_ONOFF3\n");
-        } else {
-                        /* switch-off BATT_MON */
-                        on_off_reg &= ~(0x1 << 2);
-                        max8998_write_reg (i2c_info, MAX8998_REG_ONOFF3, on_off_reg);
-        }
-
         return 0;
 }
 
@@ -1196,14 +1110,6 @@ static int max8998_pmic_resume(struct platform_device *pdev)
                         /* switch-on LDO 5 */
                         on_off_reg |= (0x1) << 0;
                         max8998_write_reg (i2c_info, MAX8998_REG_ONOFF1, on_off_reg);
-        }
-        ret = max8998_read_reg (i2c_info, MAX8998_REG_ONOFF3,  &on_off_reg);
-        if (ret) {
-                        printk( "Error reading MAX8998_REG_ONOFF3\n");
-        } else {
-                        /* switch-on BATT_MON */
-                        on_off_reg |= (0x1 << 2);
-                        max8998_write_reg (i2c_info, MAX8998_REG_ONOFF3, on_off_reg);
         }
 
         return 0;

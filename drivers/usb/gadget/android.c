@@ -79,7 +79,6 @@ int askon_status;
 static const char longname[] = "Gadget Android";
 
  #if defined(CONFIG_MACH_VICTORY)	
-extern void s5p_set_otg_dvfs(int);
 static int g_tethering;
 #endif
 /* Default vendor and product IDs, overridden by platform data */
@@ -801,7 +800,6 @@ static ssize_t tethering_switch_store(struct device *dev, struct device_attribut
 		printk("Enable tethering\n");
 		 #if defined(CONFIG_MACH_VICTORY)
 			g_tethering = 1;
-                        s5p_set_otg_dvfs(1);
 		#endif
 		samsung_enable_function(USBSTATUS_VTP);
 	}
@@ -809,7 +807,6 @@ static ssize_t tethering_switch_store(struct device *dev, struct device_attribut
 		printk("Disable tethering\n");
 		 #if defined(CONFIG_MACH_VICTORY)
 			g_tethering = 0;
-                        s5p_set_otg_dvfs(0);
 		#endif
 		if(a_dev->debugging_usb_mode)
 			samsung_enable_function(USBSTATUS_ADB);

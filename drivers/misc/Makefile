@@ -40,17 +40,9 @@ obj-$(CONFIG_SENSORS_AK8975)	+= akm8975.o
 obj-$(CONFIG_PN544)		+= pn544.o
 obj-$(CONFIG_VIBETONZ)          += vibetonz/
 ifeq ($(CONFIG_MACH_ATLAS),y)
-ifeq ($(CONFIG_S5PV210_GARNETT_DELTA),y)
-obj-$(CONFIG_SAMSUNG_JACK)      += atlas/sec_jack_garnett.o
-else
 obj-$(CONFIG_SAMSUNG_JACK)      += atlas/sec_jack.o
-endif
-else
-ifeq ($(CONFIG_MACH_FORTE),y)
-obj-$(CONFIG_SAMSUNG_JACK)      += sec_jack_forte.o
 else
 obj-$(CONFIG_SAMSUNG_JACK)      += sec_jack.o
-endif
 endif
 obj-$(CONFIG_USB_SWITCH_FSA9480)	+= fsa9480.o
 obj-$(CONFIG_PARAM)		+= param/

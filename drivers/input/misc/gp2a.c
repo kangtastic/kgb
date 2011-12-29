@@ -67,16 +67,6 @@
 #define PROXIMITY	1
 #define ALL		2
 
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-static const int adc_table[4] = {
-	340,
-	976,
-	1521,
-	2083,
-};
-#define LIGHT_BUFFER_NUM	10
-#endif
-
 static u8 reg_defaults[5] = {
 	0x00, /* PROX: read only register */
 	0x08, /* GAIN: large LED drive level */
@@ -113,10 +103,6 @@ struct gp2a_data {
 	struct wake_lock prx_wake_lock;
 	struct workqueue_struct *wq;
 	char val_state;
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-	int light_count;
-	int light_buffer;
-#endif
 };
 
 int gp2a_i2c_write(struct gp2a_data *gp2a, u8 reg, u8 *val)
@@ -151,10 +137,6 @@ static void gp2a_light_enable(struct gp2a_data *gp2a)
 {
 	gp2a_dbgmsg("starting poll timer, delay %lldns\n",
 		    ktime_to_ns(gp2a->light_poll_delay));
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-	gp2a->light_count = 0;
-	gp2a->light_buffer = 0;
-#endif
 	hrtimer_start(&gp2a->timer, gp2a->light_poll_delay, HRTIMER_MODE_REL);
 }
 
@@ -370,25 +352,8 @@ static void gp2a_work_func_light(struct work_struct *work)
 	struct gp2a_data *gp2a = container_of(work, struct gp2a_data,
 					      work_light);
 	int adc = lightsensor_get_adcvalue(gp2a);	
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-	int i;
-	for (i = 0; ARRAY_SIZE(adc_table); i++)
-		if (adc <= adc_table[i])
-			break;
-
-	if (gp2a->light_buffer == i) {
-		if (gp2a->light_count++ == LIGHT_BUFFER_NUM) {
-			input_report_abs(gp2a->light_input_dev, ABS_MISC, adc);
-			input_sync(gp2a->light_input_dev);
-		}
-	} else {
-		gp2a->light_buffer = i;
-		gp2a->light_count = 0;
-	}
-#else
 	input_report_abs(gp2a->light_input_dev, ABS_MISC, adc);
 	input_sync(gp2a->light_input_dev);
-#endif
 }
 
 /* This function is for light sensor.  It operates every a few seconds.

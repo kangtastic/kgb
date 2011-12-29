@@ -96,8 +96,8 @@ do
 done
 
 # Replace source-built OneNAND driver with stock modules from EH03
-cp -f $BUILDDIR/initramfs-EH03/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
-cp -f $BUILDDIR/initramfs-EH03/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
+# cp -f $BUILDDIR/initramfs-EH03/lib/modules/dpram_atlas.ko $WORKDIR/initramfs/lib/modules/dpram_atlas.ko
+# cp -f $BUILDDIR/initramfs-EH03/lib/modules/dpram_recovery.ko $WORKDIR/initramfs/lib/modules/dpram_recovery.ko
 
 # Remove unwanted initramfs files
 rm -f $WORKDIR/initramfs/lib/modules/hotspot_event_monitoring.ko
