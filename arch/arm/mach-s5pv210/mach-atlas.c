@@ -374,17 +374,32 @@ static struct s3cfb_lcd s6e63m0 = {
 };
 #endif
 
+#if defined(CONFIG_MACH_ATLAS_EH09)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (12288 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (12288 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (27648 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (27648 * SZ_1K)
+#elif defined(CONFIG_MACH_ATLAS_EI20)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (12288 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (12288 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (13312 * SZ_1K) // 13MB
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (21504 * SZ_1K) // 21MB
+#else
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (8688 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (8688 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (13312 * SZ_1K) // 13MB
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (21504 * SZ_1K) // 21MB
-#if defined(CONFIG_S5PV210_GARNETT_DELTA)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (3720 * SZ_1K)
-#else
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (3072 * SZ_1K)
 #endif
+
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (3072 * SZ_1K)
+#ifdef CONFIG_MACH_ATLAS_EH03
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (0 * SZ_1K)
+#else
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (5012 * SZ_1K)
+#endif
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_PMEM (0 * 5550 * SZ_1K) // TV-OUT memory 6MB->0MB
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_GPU1 (3300 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_ADSP (1500 * SZ_1K)
@@ -1637,9 +1652,17 @@ static void touch_keypad_onoff(int onoff)
 	gpio_direction_output(_3_GPIO_TOUCH_EN, onoff);
 
 	if (onoff == TOUCHKEY_OFF)
+#ifdef CONFIG_MACH_ATLAS_EH03
 		msleep(250);
+#else
+		msleep(30);
+#endif
 	else
+#ifdef CONFIG_MACH_ATLAS_EH03
 		msleep(100);
+#else
+		msleep(25);
+#endif
 }
 
 static void touch_keypad_gpio_sleep(int onoff)
@@ -3216,11 +3239,7 @@ static void atlas_power_off(void)
 				break;
 			}
 			phone_wait_cnt++;
-			#if defined (CONFIG_MACH_ATLAS_USCC) || defined(CONFIG_S5PV210_GARNETT_DELTA) 
-                        msleep(100);
-                        #else
                         msleep(1000);
-                        #endif
 		} else {
 			printk(KERN_EMERG "%s: PHONE OFF Success\n", __func__);
 			break;
@@ -3848,8 +3867,10 @@ static void __init atlas_machine_init(void)
 	if (system_rev == 0x04)
 		i2c_register_board_info(8, i2c_devs8, ARRAY_SIZE(i2c_devs8));
 #else
+	/* fm radio on other SGS devices? */
         i2c_register_board_info(8, i2c_devs8, ARRAY_SIZE(i2c_devs8));
 #endif
+	/* max17040 */
 	i2c_register_board_info(9, i2c_devs9, ARRAY_SIZE(i2c_devs9));
 	/* optical sensor */
 	gp2a_gpio_init();

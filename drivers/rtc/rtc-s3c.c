@@ -118,8 +118,9 @@ static int s3c_rtc_setpie(struct device *dev, int enabled)
 
 		if (enabled)
 			tmp |= S3C2410_TICNT_ENABLE;
-
-		/* writew(tmp, s3c_rtc_base + S3C2410_TICNT); */
+#ifndef CONFIG_MACH_ATLAS_EH03
+		writew(tmp, s3c_rtc_base + S3C2410_TICNT);
+#endif
 	}
 
 	spin_unlock_irq(&s3c_rtc_pie_lock);
@@ -144,8 +145,9 @@ static int s3c_rtc_setfreq(struct device *dev, int freq)
 	}
 
 	tmp |= (rtc_dev->max_user_freq / freq)-1;
-
-	/* writel(tmp, s3c_rtc_base + S3C2410_TICNT); */
+#ifndef CONFIG_MACH_ATLAS_EH03
+	writel(tmp, s3c_rtc_base + S3C2410_TICNT);
+#endif
 	spin_unlock_irq(&s3c_rtc_pie_lock);
 
 	return 0;
@@ -751,18 +753,22 @@ static int __devinit s3c_rtc_probe(struct platform_device *pdev)
 #ifdef CONFIG_PM
 
 /* RTC Power management control */
+#ifdef CONFIG_MACH_ATLAS_EH03
 static struct timespec s3c_rtc_delta;
+#else
+static int ticnt_save;
+#endif
 static int s3c_rtc_suspend(struct platform_device *pdev, pm_message_t state)
 {
-        struct rtc_time tm;
+#ifdef CONFIG_MACH_ATLAS_EH03
+	struct rtc_time tm;
+#endif
 	struct timespec time;
 
 	time.tv_nsec = 0;
-#if defined (CONFIG_MACH_FORTE)
-      s3c_rtc_gettime(&pdev->dev, &tm);
-      rtc_tm_to_time(&tm, &time.tv_sec);
-      //save_time_delta(&s3c_rtc_delta, &time);
-  //    s3c_rtc_enable(pdev, 0);
+#ifndef CONFIG_MACH_ATLAS_EH03
+	/* save TICNT for anyone using periodic interrupts */
+	ticnt_save = readl(s3c_rtc_base + S3C2410_TICNT);
 #endif
 	if (device_may_wakeup(&pdev->dev))
 		enable_irq_wake(s3c_rtc_alarmno);
@@ -774,7 +780,9 @@ static int s3c_rtc_resume(struct platform_device *pdev)
 	struct timespec time;
 
 	time.tv_nsec = 0;
-
+#ifndef CONFIG_MACH_ATLAS_EH03
+	writel(ticnt_save, s3c_rtc_base + S3C2410_TICNT);
+#endif
 	if (device_may_wakeup(&pdev->dev))
 		disable_irq_wake(s3c_rtc_alarmno);
 	return 0;

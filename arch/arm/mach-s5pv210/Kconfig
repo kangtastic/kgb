@@ -230,12 +230,35 @@ config S5PV210_GARNETT_DELTA
         help
                 Enables to include the Garnett product delta
 
-config MACH_ATLAS_USCC
-        depends on MACH_ATLAS
-        bool "select USCC Feature"
-        default n
-        help
-                Enables to include the USCC Carrier Feature               
+config MACH_ATLAS_EH03
+	depends on MACH_ATLAS
+	bool "Atlas: build for EH03 (pick only one of these three)"
+	default y
+	help
+		Sets things like video and camera buffers for EH03.
+		The default selection is to build for EH03.
+		Of these three options (EH09, EI20 and EH03), make
+		sure to choose only one in the final kernel config.
+
+config MACH_ATLAS_EI20
+	depends on MACH_ATLAS
+	bool "Atlas: build for EI20 (pick only one of these three)"
+	default n
+	help
+		Sets things like video and camera buffers for EI20.
+		The default selection is to build for EH03.
+		Of these three options (EH09, EI20 and EH03), make
+		sure to choose only one in the final kernel config.
+
+config MACH_ATLAS_EH09
+	depends on MACH_ATLAS
+	bool "Atlas: build for EH09 (pick only one of these three)"
+	default n
+	help
+		Sets things like video and camera buffers for EH09.
+		The default selection is to build for EH03.
+		Of these three options (EH09, EI20 and EH03), make
+		sure to choose only one in the final kernel config.             
 
 config S5PV210_SETUP_FB
 	bool

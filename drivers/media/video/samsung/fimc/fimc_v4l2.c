@@ -29,8 +29,11 @@ static int fimc_querycap(struct file *filp, void *fh,
 	struct fimc_control *ctrl = ((struct fimc_prv_data *)fh)->ctrl;
 
 	fimc_info1("%s: called\n", __func__);
-
+#ifdef CONFIG_MACH_ATLAS_EH03
 	strcpy(cap->driver, "Samsung FIMC Driver");
+#else
+	strlcpy(cap->driver,"Samsung FIMC Driver", sizeof(cap->driver));
+#endif
 	strlcpy(cap->card, ctrl->vd->name, sizeof(cap->card));
 	sprintf(cap->bus_info, "FIMC AHB-bus");
 

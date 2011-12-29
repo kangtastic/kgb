@@ -143,6 +143,7 @@ static void s5pv210_pm_prepare(void)
 
 static void s5pv210_pm_resume(void)
 {
+#ifdef CONFIG_MACH_ATLAS_EH03
 	u32 tmp, audiodomain_on;
 
 	tmp = __raw_readl(S5P_NORMAL_CFG);
@@ -153,18 +154,22 @@ static void s5pv210_pm_resume(void)
 		__raw_writel(tmp , S5P_NORMAL_CFG);
 		audiodomain_on = 1;
 	}
+#else
+	u32 tmp;
+#endif
 
 	tmp = __raw_readl(S5P_OTHERS);
 	tmp |= (S5P_OTHERS_RET_IO | S5P_OTHERS_RET_CF |\
 		S5P_OTHERS_RET_MMC | S5P_OTHERS_RET_UART);
 	__raw_writel(tmp , S5P_OTHERS);
 
+#ifdef CONFIG_MACH_ATLAS_EH03
 	if (audiodomain_on) {
 		tmp = __raw_readl(S5P_NORMAL_CFG);
 		tmp &= ~S5PV210_PD_AUDIO;
 		__raw_writel(tmp , S5P_NORMAL_CFG);
 	}
-
+#endif
 	s3c_pm_do_restore_core(core_save, ARRAY_SIZE(core_save));
 }
 

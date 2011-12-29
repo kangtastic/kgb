@@ -20,7 +20,18 @@
 #include <linux/types.h>
 #include <linux/ioctl.h>
 
-#if !defined(CONFIG_MACH_VICTORY) && !defined(CONFIG_MACH_ATLAS) 
+#if 0
+// In the EH09 and EI12 source this section was as follows:
+#ifndef CONFIG_MACH_VICTORY
+#define ADD_SYSTEM_TIMEINFO
+#endif
+// In EH03 it was changed to:
+#if !defined(CONFIG_MACH_VICTORY) && !defined(CONFIG_MACH_ATLAS)
+#define ADD_SYSTEM_TIMEINFO
+#endif
+// So in EH09 and EI12, ADD_SYSTEM_TIMEINFO was being defined by accident.
+#endif
+#ifndef CONFIG_MACH_ATLAS_EH03
 #define ADD_SYSTEM_TIMEINFO
 #endif
 

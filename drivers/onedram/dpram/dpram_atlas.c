@@ -2677,14 +2677,14 @@ static int dpram_resume(struct platform_device *dev)
 	enable_irq(dpram_irq);
 
 	gpio_set_value(GPIO_PDA_ACTIVE, GPIO_LEVEL_HIGH);
-	
+
 	if(requested_semaphore)
 		printk(KERN_ERR "=====> %s requested semaphore: %d\n", __func__, requested_semaphore);
 	check_miss_interrupt();
 	return 0;
 }
 
-static int dpram_shutdown(struct platform_Device *dev)
+static int dpram_shutdown(struct platform_device *dev)
 {
 	int ret = 0;
 	printk("\ndpram_shutdown !!!!!!!!!!!!!!!!!!!!!\n");

@@ -370,6 +370,9 @@ struct fimc_effect {
 /* fimc controller abstration */
 struct fimc_control {
 	int				id;		/* controller id */
+#ifndef CONFIG_MACH_ATLAS_EH03
+	int				capture_mode;
+#endif
 	char				name[16];
 	atomic_t			in_use;
 	void __iomem			*regs;		/* register i/o */
@@ -384,6 +387,11 @@ struct fimc_control {
 	wait_queue_head_t		wq;
 	struct device			*dev;
 	int				irq;
+
+#ifndef CONFIG_MACH_ATLAS_EH03
+	/* P1 */
+	int				vt_mode;
+#endif
 
 	/* v4l2 related */
 	struct video_device		*vd;

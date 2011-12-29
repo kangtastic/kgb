@@ -27,6 +27,9 @@
 #include <mach/map.h>
 #include <plat/regs-otg.h>
 #include <linux/i2c.h>
+#ifndef CONFIG_MACH_ATLAS_EH03
+#include <mach/cpu-freq-v210.h>
+#endif
 #include <linux/regulator/consumer.h>
 #if	defined(CONFIG_USB_GADGET_S3C_OTGD_DMA_MODE) /* DMA mode */
 #define OTG_DMA_MODE		1
@@ -102,6 +105,11 @@ static char *state_names[] = {
 
 #define	DRIVER_DESC		"S3C HS USB Device Controller Driver, (c) 2008-2009 Samsung Electronics"
 #define	DRIVER_VERSION		"15 March 2009"
+
+#ifndef CONFIG_MACH_ATLAS_EH03
+extern void s5pv210_lock_dvfs_high_level(uint , uint);
+extern void s5pv210_unlock_dvfs_high_level(unsigned int);
+#endif
 
 struct s3c_udc	*the_controller;
 
@@ -426,7 +434,17 @@ static int s3c_udc_power(struct s3c_udc *dev, char en)
 
 	return 0;
 }
-
+#ifndef CONFIG_MACH_ATLAS_EH03
+void s5p_set_otg_dvfs(int enable)
+{
+	if (enable) {
+		// s5pv210_lock_dvfs_high_level(DVFS_LOCK_TOKEN_8,L1); //800MHz lock
+		s5pv210_lock_dvfs_high_level(DVFS_LOCK_TOKEN_8, L8) // 800MHz on KGB kernel
+	} else {
+		s5pv210_unlock_dvfs_high_level(DVFS_LOCK_TOKEN_8);
+	}
+}
+#endif
 int s3c_vbus_enable(struct usb_gadget *gadget, int enable)
 {
 	unsigned long flags;
@@ -437,9 +455,10 @@ int s3c_vbus_enable(struct usb_gadget *gadget, int enable)
  	 if (enable) {
    		dev_info(&gadget->dev, "USB udc %d,%d lock\n", dev->udc_enabled, enable);
   		//wake_lock(&dev->udc_wake_lock);
-  		s5pv210_lock_dvfs_high_level(DVFS_LOCK_TOKEN_8, L3); //200Mhz lock
+		s5pv210_lock_dvfs_high_level(DVFS_LOCK_TOKEN_8, L10); //200Mhz lock, was L3
   	} else {
    		dev_info(&gadget->dev, "USB udc %d,%d unlock\n", dev->udc_enabled, enable);
+		//wake_unlock(&dev->udc_wake_lock);
    		s5pv210_unlock_dvfs_high_level(DVFS_LOCK_TOKEN_8);
   	}
 #endif
