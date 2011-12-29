@@ -125,6 +125,9 @@ enum {
 #define RECHARGE_COND_VOLTAGE		4130000
 #endif
 #define RECHARGE_COND_TIME		(30*1000)	/* 30 seconds */
+#ifdef CONFIG_BATTERY_S5PC110_TRICKLE
+#define RECHARGE_COND_SOC		95		/* 95% SOC before triggering recharge condition */
+#endif
 #define LOW_BATT_COND_VOLTAGE           3400
 #define LOW_BATT_COND_LEVEL             0
 

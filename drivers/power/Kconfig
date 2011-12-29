@@ -148,6 +148,14 @@ config BATTERY_S5PC110
 	help
 	  Say Y to enable support for batteries with s5pc110 chip.	  
 
+config BATTERY_S5PC110_TRICKLE
+	bool "Trickle charge patch by djp952"
+	depends on BATTERY_S5PC110
+	default n
+	help
+	  Experimental trickle charge patch to solve battery drop.
+	  However, the phone will make plugged/unplugged noises.
+
 config CHARGER_PCF50633
 	tristate "NXP PCF50633 MBC"
 	depends on MFD_PCF50633
