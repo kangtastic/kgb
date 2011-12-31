@@ -4,10 +4,6 @@ echo ""
 # Includes
 . /sbin/lib.sh
 
-# Abort conditions
-root_uid_check
-af $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP || err_exit "Kernel does not support in-call boost settings!"
-
 # Defines
 BOOST_RCV=/sys/devices/virtual/misc/voodoo_sound/incall_boost_rcv
 BOOST_BT=/sys/devices/virtual/misc/voodoo_sound/incall_boost_bt
@@ -15,6 +11,10 @@ BOOST_SPK=/sys/devices/virtual/misc/voodoo_sound/incall_boost_spk
 BOOST_HP=/sys/devices/virtual/misc/voodoo_sound/incall_boost_hp
 BOOST_SCRIPT=/system/etc/init.d/91callboost
 REMOUNTED=0
+
+# Abort conditions
+root_uid_check
+af $BOOST_RCV $BOOST_BT $BOOST_SPK $BOOST_HP || err_exit "Kernel does not support in-call boost settings!"
 
 # Functions
 show_boost()
@@ -51,11 +51,15 @@ done
 write_boot()
 {
 [ -f $1 ] && echo -n "Overwriting existing boot script at $1... " || echo -n "Installing boot script to $1... "
+setprop persist.kgb.boost_rcv $B_RCV &&
+setprop persist.kgb.boost_bt $B_BT &&
+setprop persist.kgb.boost_spk $B_SPK &&
+setprop persist.kgb.boost_hp $B_HP &&
 echo "#!/system/bin/sh
-echo $B_RCV > $BOOST_RCV
-echo $B_BT > $BOOST_BT
-echo $B_SPK > $BOOST_SPK
-echo $B_HP > $BOOST_HP" > $1 && chown 0.0 $1 && chmod 755 $1 &&
+getprop persist.kgb.boost_rcv > $BOOST_RCV
+getprop persist.kgb.boost_bt > $BOOST_BT
+getprop persist.kgb.boost_spk > $BOOST_SPK
+getprop persist.kgb.boost_hp > $BOOST_HP" > $1 && chown 0.0 $1 && chmod 755 $1 &&
 echo "done!" || err_exit "Failed to install boot script!"
 }
 

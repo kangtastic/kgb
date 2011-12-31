@@ -4,10 +4,6 @@ echo ""
 # Includes
 . /sbin/lib.sh
 
-# Abort conditions
-root_uid_check
-[ -e /dev/block/zram0 ] || err_exit "Kernel does not support zram!"
-
 # Defines
 ZRAM_SIZE_MB=48
 ZRAM_SIZE_BYTES=$(($ZRAM_SIZE_MB * 1024 * 1024))
@@ -16,6 +12,10 @@ ZRAM_TOTAL=0
 ZRAM_USED=0
 ZRAM_FREE=0
 REMOUNTED=0
+
+# Abort conditions
+root_uid_check
+[ -e /dev/block/zram0 ] || err_exit "Kernel does not support zram!"
 
 # Functions
 probe_zram()
