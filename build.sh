@@ -88,7 +88,7 @@ echo "Build script running on $(date -R)"
 
 # Parse the command line
 [ $# -eq 0 ] && echo "./build.sh: no arguments to script" >&2 && help_msg 1
-while getopts tb:h OPT; do
+while getopts t:bh OPT; do
 	case "$OPT" in
 		t)
 			TARGET=$OPTARG
@@ -177,7 +177,7 @@ makeodin $KERNEL_VERSION
 if [ -d /mnt/vbs ]; then
 	cp -f "${OUTDIR}/${KERNEL_VERSION}.tar.md5" /mnt/vbs/
 	cp -f "${OUTDIR}/${KERNEL_VERSION}.zip" /mnt/vbs/
-	makeodin "KGB-$(TARGET}-${DATE}"
+	makeodin "KGB-${TARGET}-${DATE}"
 fi
 
 #######

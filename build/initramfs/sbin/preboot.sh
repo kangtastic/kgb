@@ -24,9 +24,10 @@ if [ -x /system/xbin/busybox ]; then
 	grep "8.8.8.8" $RC || echo "nameserver 8.8.8.8" >> $RC
 	grep "8.8.4.4" $RC || echo "nameserver 8.8.4.4" >> $RC
 
-# Add a little helper named ll to call "/system/xbin/busybox ls -al $*"
-	if [ ! "$(cat /system/xbin/ll)" = "/system/xbin/busybox ls -al \$*" ]; then
-		echo "/system/xbin/busybox ls -al \$*" > /system/xbin/ll
+# Add a little helper named ll to call "/system/xbin/busybox ls -al --color=auto $@"
+# Maybe this would be better done as a bash alias but whatever
+	if [ ! "$(cat /system/xbin/ll)" = "/system/xbin/busybox ls -al --color=auto \$@" ]; then
+		echo "/system/xbin/busybox ls -al --color=auto \$@" > /system/xbin/ll
 		chmod 755 /system/xbin/ll
 	fi
 fi
@@ -35,7 +36,7 @@ fi
 mount -o ro,remount,noatime /system /system
 
 # Set kernel vm parameters
-# Move these here so that init.d scripts may modify these values later
+# Do it here instead of in postboot so that init.d scripts may modify these values later
 PSVM=/proc/sys/vm
 echo 100 > $PSVM/vfs_cache_pressure
 echo 20 > $PSVM/dirty_ratio
