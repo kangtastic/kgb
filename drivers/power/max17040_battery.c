@@ -136,37 +136,19 @@ static void max17040_get_soc(struct i2c_client *client)
 	struct max17040_chip *chip = i2c_get_clientdata(client);
 	u8 msb;
 	u8 lsb;
-	int pure_soc, adj_soc, soc;
+	u32 pure_soc;
+	u32 adj_soc;
+	u32 soc;
 
 	msb = max17040_read_reg(client, MAX17040_SOC_MSB);
 	lsb = max17040_read_reg(client, MAX17040_SOC_LSB);
 
-#if defined (CONFIG_S5PV210_GARNETT_DELTA)
-
-	/*Adjusted SOC(Garnett)
-	**RCOMP : A0h, FULL : 95.0, EMPTY : 1.2
-	**Adj_soc = (SOC%-EMPTY)/(FULL-EMPTY)*100
-	*/
-
-	pure_soc = msb * 100 + ((lsb * 100) / 256);
-
-	if (pure_soc >= 0)
-		adj_soc = ((pure_soc * 10000) - 120) / (9500 - 120);
-	else
-		adj_soc = 0;
-
-	soc = adj_soc / 100;
-
-	if (adj_soc % 100 >= 50)
-		soc += 1;
-
-#elif defined (CONFIG_MACH_ATLAS)
 	pure_soc = msb * 100 + ((lsb * 100) / 256);
 
 	if (pure_soc >= 100)
 		adj_soc = pure_soc;
 	else {
-		if(pure_soc >= 70)
+		if (pure_soc >= 70)
 			adj_soc = 100;
 		else
 			adj_soc = 0;
@@ -184,45 +166,6 @@ static void max17040_get_soc(struct i2c_client *client)
 
 	if (soc >= 100)
 		soc = 100;
-
-#elif defined (CONFIG_MACH_VICTORY)
-
-	/*Adjusted SOC(Victory)
-	**RCOMP : D0h, FULL : 94.3, EMPTY : 1.4
-	**Adj_soc = (SOC%-EMPTY)/(FULL-EMPTY)*100
-	*/
-
-	pure_soc = msb * 100 + ((lsb * 100) / 256);
-
-	if (pure_soc >= 0)
-		adj_soc = ((pure_soc * 10000) - 140) / (9430 - 140);
-	else
-		adj_soc = 0;
-
-	soc = adj_soc / 100;
-
-	if (adj_soc % 100 >= 50)
-		soc += 1;
-
-#else
-
-	pure_soc = msb * 100 + (lsb * 100) / 256;
-
-	if (pure_soc >= 100)
-		adj_soc = pure_soc;
-	else if (pure_soc >= 70)
-		adj_soc = 100; // 1%
-	else
-		adj_soc = 0; // 0%
-
-	if (adj_soc < 1500)
-		soc = (adj_soc * 4 / 3 + 50) / 100;
-	else if (adj_soc < 7600)
-		soc = adj_soc / 100 + 5;
-	else
-		soc = ((adj_soc - 7600) * 8 / 10 + 50) / 100 + 81;
-
-#endif
 
 	chip->soc = min(soc, 100);
 }

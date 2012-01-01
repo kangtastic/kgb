@@ -71,17 +71,9 @@
 
 #define USE_MODULE_TIMEOUT      (10*60*1000)    // 10 min (DG05_FINAL: 1 min -> 10 min)
 
-#ifdef __SOC_TEST__
-static int soc_test = 100;
-#endif
-
-#if 0
-#define bat_dbg(fmt, ...) printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
-#define bat_info(fmt, ...) printk(KERN_INFO pr_fmt(fmt), ##__VA_ARGS__)
-#else
 #define bat_dbg(fmt, ...)
 #define bat_info(fmt, ...) printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
-#endif
+
 #ifdef CONFIG_KERNEL_DEBUG_SEC
 extern void kernel_sec_clear_upload_magic_number(void); 
 extern void kernel_sec_set_upload_magic_number(void);   
@@ -140,9 +132,6 @@ struct chg_data {
 	struct adc_channel_type s3c_adc_channel;
 	uint			batt_use;
 	uint			batt_use_wait;
-#ifdef SPRINT_SLATE_TEST
-        bool                    slate_test_mode;
-#endif
 };
 
 static struct chg_data *pchg = NULL;	// pointer to chg initialized in probe function
@@ -205,67 +194,7 @@ static struct device_attribute s3c_battery_attrs[] = {
 #endif
         SEC_BATTERY_ATTR(batt_chg_current_aver),
 	SEC_BATTERY_ATTR(batt_type), //to check only
-#ifdef __SOC_TEST__
-        SEC_BATTERY_ATTR(soc_test),
-#endif
-#ifdef SPRINT_SLATE_TEST
-        SEC_BATTERY_ATTR(slate_test_mode),
-#endif
-#ifdef CONFIG_MACH_VICTORY
-	SEC_BATTERY_ATTR(batt_v_f_adc),
-	SEC_BATTERY_ATTR(call),
-	SEC_BATTERY_ATTR(video),
-	SEC_BATTERY_ATTR(music),
-	SEC_BATTERY_ATTR(browser),
-	SEC_BATTERY_ATTR(hotspot),
-	SEC_BATTERY_ATTR(camera),
-	SEC_BATTERY_ATTR(data_call),
-	SEC_BATTERY_ATTR(wimax),
-	SEC_BATTERY_ATTR(batt_use),
-#endif
 };
-
-/* Wimax  may need it */
-/*Currently not in use */
-/*
-struct s3c_battery_info {
-        int present;
-        int polling;
-        unsigned int polling_interval;
-        unsigned int device_state;
-
-        struct battery_info bat_info;
-#ifdef LPM_MODE
-        unsigned int charging_mode_booting;
-#endif
-};
-static struct s3c_battery_info s3c_bat_info;
-
-#if defined (CONFIG_MACH_VICTORY)
-static void use_wimax_timer_func(unsigned long unused)
-{
-        s3c_bat_info.device_state = s3c_bat_info.device_state & (~USE_WIMAX);
-        printk("%s: OFF (0x%x) \n", __func__, s3c_bat_info.device_state);
-}
-
-int s3c_bat_use_wimax(int onoff)
-{
-        if (onoff)
-        {
-                del_timer_sync(&use_wimax_timer);
-                s3c_bat_info.device_state = s3c_bat_info.device_state | USE_WIMAX;
-                printk("%s: ON (0x%x) \n", __func__, s3c_bat_info.device_state);
-        }
-        else
-        {
-                mod_timer(&use_wimax_timer, jiffies + msecs_to_jiffies(USE_MODULE_TIMEOUT));
-        }
-
-        return s3c_bat_info.device_state;
-}
-EXPORT_SYMBOL(s3c_bat_use_wimax);
-#endif
-*/
 
 static void max8998_lowbat_config(struct chg_data *chg, int on)
 {
@@ -551,9 +480,6 @@ static int s3c_bat_get_property(struct power_supply *bat_ps,
 			return -EINVAL;
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
-#ifdef __SOC_TEST__
-		chg->bat_info.batt_soc = soc_test;
-#else 
 		if ((chg->bat_info.batt_soc == 0) || (chg->bat_info.decimal_point_level == 0))
 			val->intval = 0;
 		else if (chg->set_batt_full)
@@ -564,7 +490,6 @@ static int s3c_bat_get_property(struct power_supply *bat_ps,
 			 chg->pdata->psy_fuelgauge->get_property(
 				chg->pdata->psy_fuelgauge, psp, val) < 0)
 			return -EINVAL;
-#endif
 		break;
 	case POWER_SUPPLY_PROP_TECHNOLOGY:
 		val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
@@ -606,18 +531,11 @@ static int s3c_ac_get_property(struct power_supply *ps,
 }
 unsigned int s3c_adc_tempreture;
 static inline int s3c_adc_get_adc_data_ex(int channel) {
-#ifdef CONFIG_MACH_CRESPO
-        if (channel == s3c_adc_tempreture)
-                return ((4096 - s3c_adc_get_adc_data(channel)) >> 4);
-        else
-                return (s3c_adc_get_adc_data(channel) >> 2);
-#else
 	/* Atlas, Victory and Garnett */
 	if (channel == s3c_adc_tempreture)
 		return (s3c_adc_get_adc_data(channel));
 	else
 		return (s3c_adc_get_adc_data(channel) >> 2);
-#endif
 }
 
 static int s3c_bat_get_adc_data(int adc_ch)
@@ -681,10 +599,6 @@ static unsigned long calculate_average_adc(unsigned char channel,int adc, struct
 
 	chg->adc_sample[channel].total_adc = total_adc;
 	chg->adc_sample[channel].average_adc = average_adc;
-
-#ifdef CONFIG_MACH_CRESPO
-	chg->bat_info.batt_temp_adc = average_adc;
-#endif
 
 	return average_adc;
 }
@@ -752,16 +666,8 @@ static int s3c_get_bat_temp(struct chg_data *chg)
 	int temp_low_block = s5p_battery_block_temp->temp_low_block;
 	int temp_curr;
 
-#ifndef CONFIG_MACH_CRESPO
-	/* Atlas, Victory and Garnett */
-#ifdef CONFIG_S5PV210_GARNETT_DELTA
-	/* to reduce deviation.. (hw team requirement) */
-	temp_adc = (4096 - temp_adc) >> 2;
-#else
 	/* Atlas and Victory */
 	temp_adc = (4096 - temp_adc) >> 4;
-#endif
-#endif	/* CONFIG_MACH_CRESPO */
 
 	/* Celcius mapping */
 	while (left_side <= right_side) {
@@ -779,19 +685,8 @@ static int s3c_get_bat_temp(struct chg_data *chg)
 	}
 
 	chg->bat_info.batt_temp = temp;
-
-#ifdef CONFIG_MACH_CRESPO
-	temp_curr = temp;
-
-#else
 	chg->bat_info.batt_temp_adc = temp_adc;
 	temp_curr = temp_adc;
-
-#ifdef CONFIG_MACH_VICTORY
-	if (chg->batt_use) {
-		temp_high_block = s5p_battery_block_temp->temp_high_event_block;
-	}
-#endif
 
 	/* Temperature control */
 	if (lpm_charging_mode) {
@@ -800,7 +695,6 @@ static int s3c_get_bat_temp(struct chg_data *chg)
 		temp_low_recover = s5p_battery_block_temp->temp_low_recover_lpm;
 		temp_low_block = s5p_battery_block_temp->temp_low_block_lpm;
 	}
-#endif	/* !CONFIG_MACH_CRESPO */
 
 	if (temp_curr >= temp_high_block) {
 		if (health != POWER_SUPPLY_HEALTH_OVERHEAT &&
@@ -827,7 +721,7 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 	union power_supply_propval value;
 	int temp_high_recover = s5p_battery_block_temp->temp_high_recover;
 	int temp_low_recover = s5p_battery_block_temp->temp_low_recover;
-	static int recharge_count = 0;
+	static int recharge_count;
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
 	int call_cable_status_update = 0;
 #endif
@@ -842,19 +736,12 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 			chg->pdata->psy_fuelgauge, POWER_SUPPLY_PROP_CAPACITY, &value);
 		if ((chg->bat_info.charging_status != POWER_SUPPLY_STATUS_DISCHARGING) ||
 		    (chg->bat_info.batt_soc > value.intval))
-#ifndef __SOC_TEST__
 			chg->bat_info.batt_soc = value.intval;
-#else
-			chg->bat_info.batt_soc = soc_test;
-#endif
 	}
-
-#ifndef CONFIG_MACH_CRESPO
 	if (lpm_charging_mode) {
 		temp_high_recover = s5p_battery_block_temp->temp_high_recover_lpm;
 		temp_low_recover = s5p_battery_block_temp->temp_low_recover_lpm;
 	}
-#endif
 
 	discharge_reason = chg->bat_info.dis_reason & 0xf;
 
@@ -880,15 +767,6 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 	    chg->bat_info.batt_vcell >= RECHARGE_COND_VOLTAGE)
 		recharge_count = 0;
 
-#ifdef CONFIG_MACH_CRESPO
-	if ((discharge_reason & DISCONNECT_TEMP_OVERHEAT) &&
-	    chg->bat_info.batt_temp <= temp_high_recover)
-		chg->bat_info.dis_reason &= ~DISCONNECT_TEMP_OVERHEAT;
-
-	if ((discharge_reason & DISCONNECT_TEMP_FREEZE) &&
-	    chg->bat_info.batt_temp >= temp_low_recover)
-		chg->bat_info.dis_reason &= ~DISCONNECT_TEMP_FREEZE;
-#else
 	/* Atlas, Victory and Garnett */
 	if ((discharge_reason & DISCONNECT_TEMP_OVERHEAT) &&
 	    chg->bat_info.batt_temp_adc <= temp_high_recover)
@@ -897,7 +775,6 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 	if ((discharge_reason & DISCONNECT_TEMP_FREEZE) &&
 	    chg->bat_info.batt_temp_adc >= temp_low_recover)
 		chg->bat_info.dis_reason &= ~DISCONNECT_TEMP_FREEZE;
-#endif
 
 	if ((discharge_reason & DISCONNECT_OVER_TIME) &&
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
@@ -949,7 +826,6 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 		chg->cable_status, chg->bat_info.charging_status, chg->bat_info.dis_reason);
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
 	if(call_cable_status_update == 1) {
-
 		chg->bat_info.batt_is_full = false;		// Reset battery full flag
 		chg->set_batt_full = false;				// Reset battery full flag
 		s3c_cable_status_update(chg);			// Trigger a cable status update to start charging again
@@ -958,65 +834,16 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 }
 
 #ifdef __VZW_AUTH_CHECK__
-//extern int verizon_batt_auth_full_check(void);
-//extern int verizon_batt_auth_check(void);
-
-//static int batt_auth_full_check = 0;
-
 static int s3c_bat_check_v_f(struct chg_data *chg)
 {
 
 	if (chg->bat_info.batt_health == POWER_SUPPLY_HEALTH_UNSPEC_FAILURE) {
 		chg->bat_info.batt_health = POWER_SUPPLY_HEALTH_GOOD;
-		bat_info("/BATT_ID/ %s POWER_SUPPLY_HEALTH_UNSPEC_FAILURE\n", __func__);
+		bat_info("/BATT_ID/ %s failed... JUST KIDDING :D\n", __func__);
+		pr_debug("%s: unauthorized battery detected... NOT :D", __func__);
 	}
-
-	/*
-	if (batt_auth_full_check == 0) {
-		retval = verizon_batt_auth_full_check();
-		batt_auth_full_check = 1;
-		if (!retval) {
-			chg->bat_info.batt_health = POWER_SUPPLY_HEALTH_UNSPEC_FAILURE;
-			bat_info("/BATT_ID/ %s failed\n", __func__);
-			return 0;
-		}
-		
-		bat_info("/BATT_ID/ %s passed\n", __func__);
-	} else {
-		retval = verizon_batt_auth_check();
-		if (!retval)
-			return 0;
-	}
-	*/
-
 	return 1;
 }
-#else
-
-#ifndef  CONFIG_MACH_FORTE
-/* Sprint V_F check */
-static int s3c_bat_check_v_f(struct chg_data *chg)
-{
-	int retval = 0;
-	int adc_vf = 0;
-
-	adc_vf = s3c_bat_get_adc_data(chg->s3c_adc_channel.s3c_adc_v_f);
-
-	if ((0 <= adc_vf) && (adc_vf <= 50)){
-		if (chg->bat_info.batt_health ==  POWER_SUPPLY_HEALTH_UNSPEC_FAILURE)
-		chg->bat_info.batt_health = POWER_SUPPLY_HEALTH_GOOD;
-		retval = 1;
-             }
-	else {
-		chg->bat_info.batt_health = POWER_SUPPLY_HEALTH_UNSPEC_FAILURE;
-		bat_info("/V_F/ %s failed (adc = %d)\n", __func__, adc_vf);
-		retval = 0;
-	}
-
-	return retval;
-}
-#endif
-
 #endif
 
 extern int set_tsp_for_ta_detect(int state);
@@ -1078,33 +905,22 @@ static int s3c_cable_status_update(struct chg_data *chg)
 		}
 
 		/* able to charge */
-#ifdef SPRINT_SLATE_TEST
-                if (chg->slate_test_mode){
-                     chg->charging =0;
-                     chg->cable_status = CABLE_TYPE_NONE;
-                     }
-                else
-                     chg->charging =1;
-#else
 		chg->charging = 1;
-#endif
+
 		chg->bat_info.decimal_point_level = 1;  // lobat pwroff
 		ret = max8998_charging_control(chg);
 		if (ret < 0)
 			goto err;
-#ifdef SPRINT_SLATE_TEST
-                chg->bat_info.charging_status = chg->set_batt_full ?
-                        POWER_SUPPLY_STATUS_FULL : (chg->slate_test_mode ? POWER_SUPPLY_STATUS_DISCHARGING :POWER_SUPPLY_STATUS_CHARGING);
-#else
+
 		chg->bat_info.charging_status = chg->set_batt_full ?
 			POWER_SUPPLY_STATUS_FULL : POWER_SUPPLY_STATUS_CHARGING;
-#endif
+
 	} else {
 		vdc_status = 0;
 		/* no vdc in, not able to charge */
 		chg->charging = 0;
 
-		pr_debug("%s: cable_status = %d, doc_status = %d\n", __func__, chg->cable_status, fsa9480_get_dock_status());
+		pr_debug("%s: cable_status = %d, dock_status = %d\n", __func__, chg->cable_status, fsa9480_get_dock_status());
 		if (fsa9480_get_dock_status() && chg->cable_status != CABLE_TYPE_NONE) {
 			chg->cable_status = CABLE_TYPE_NONE;
 			chg->lowbat_warning = false;
@@ -1133,10 +949,6 @@ static int s3c_cable_status_update(struct chg_data *chg)
 		chg->bat_info.dis_reason = 0;
 		chg->discharging_time = 0;
 
-#if 0
-		if (lpm_charging_mode && pm_power_off)
-			pm_power_off();
-#endif
 	}
 
 update:
@@ -1164,12 +976,9 @@ static void s3c_bat_work(struct work_struct *work)
 	mutex_lock(&chg->mutex);
 
 	s3c_get_bat_temp(chg);
-  #ifndef CONFIG_MACH_FORTE
 	s3c_bat_check_v_f(chg);
-  #endif
 	s3c_bat_discharge_reason(chg);
 
-#if defined( CONFIG_MACH_ATLAS) || defined(CONFIG_MACH_FORTE)
 	/* low battery check by voltage */
 	if ((chg->bat_info.batt_vcell < 3400000) && (chg->cable_status == CABLE_TYPE_NONE))
 		cnt++;
@@ -1182,7 +991,6 @@ static void s3c_bat_work(struct work_struct *work)
 		if (cnt > 10)
 			cnt = 10;
 	}
-#endif
 
 	ret = s3c_cable_status_update(chg);
 	if (ret < 0)
@@ -1241,21 +1049,11 @@ static void s3c_bat_use_module(struct chg_data *chg, int module, int enable)
 	}
 }
 
-#ifdef CONFIG_MACH_VICTORY
-int s3c_bat_use_wimax(int onoff)
-{
-	struct chg_data *chg = pchg;
-
-	s3c_bat_use_module(chg, USE_WIMAX, onoff);
-}
-EXPORT_SYMBOL(s3c_bat_use_wimax);
-#else
 int s3c_bat_use_wimax(int onoff)
 {
 	return 0;
 }
 EXPORT_SYMBOL(s3c_bat_use_wimax);
-#endif
 
 extern void max17040_reset_soc(void);
 
@@ -1305,11 +1103,9 @@ static ssize_t s3c_bat_show_attrs(struct device *dev,
 				chg->pdata->psy_fuelgauge->get_property(
 					chg->pdata->psy_fuelgauge,
 					POWER_SUPPLY_PROP_CAPACITY, &value);
-#ifndef __SOC_TEST__
+
 				chg->bat_info.batt_soc = value.intval;
-#else
-				chg->bat_info.batt_soc = soc_test;
-#endif
+
 			}
 			i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", chg->bat_info.batt_soc);
 		}
@@ -1334,15 +1130,6 @@ static ssize_t s3c_bat_show_attrs(struct device *dev,
         case AUTH_BATTERY:
 		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", 1);
 	break;
-		/* 
-		if (chg->jig_status)
-			i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n", 1);
-		else
-			i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-				(chg->bat_info.batt_health == POWER_SUPPLY_HEALTH_UNSPEC_FAILURE) ?
-				0 : 1);
-                break;
-		*/
 #endif
         case BATT_CHG_CURRENT_AVER:
                 i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
@@ -1352,57 +1139,6 @@ static ssize_t s3c_bat_show_attrs(struct device *dev,
 	case BATT_TYPE:
 		i += scnprintf(buf + i, PAGE_SIZE - i, "SDI_SDI\n");
 		break;
-#ifdef __SOC_TEST__
-        case SOC_TEST:
-                i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-                        soc_test);
-                break;
-#endif
-#ifdef CONFIG_MACH_VICTORY
-	case BATT_V_F_ADC:
-                i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-                                s3c_bat_get_adc_data(chg->s3c_adc_channel.s3c_adc_v_f));
-		break;
-#endif
-
-#ifdef CONFIG_MACH_VICTORY
-	case BATT_USE_CALL:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			(chg->batt_use & USE_CALL) ? 1 : 0);
-		break;
-	case BATT_USE_VIDEO:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			(chg->batt_use & USE_VIDEO) ? 1 : 0);
-		break;
-	case BATT_USE_MUSIC:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			(chg->batt_use & USE_MUSIC) ? 1 : 0);
-		break;
-	case BATT_USE_BROWSER:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			(chg->batt_use & USE_BROWSER) ? 1 : 0);
-		break;
-	case BATT_USE_HOTSPOT:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			(chg->batt_use & USE_HOTSPOT) ? 1 : 0);
-		break;
-	case BATT_USE_CAMERA:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			(chg->batt_use & USE_CAMERA) ? 1 : 0);
-		break;
-	case BATT_USE_DATA_CALL:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			(chg->batt_use & USE_DATA_CALL) ? 1 : 0);
-		break;
-	case BATT_USE_WIMAX:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			(chg->batt_use & USE_WIMAX) ? 1 : 0);
-		break;
-	case BATT_USE:
-		i += scnprintf(buf + i, PAGE_SIZE - i, "%d\n",
-			chg->batt_use);
-		break;
-#endif
 	default:
 		i = -EINVAL;
 	}
@@ -1433,72 +1169,6 @@ static ssize_t s3c_bat_store_attrs(struct device *dev, struct device_attribute *
 			ret = count;
 		}
 		break;
-#ifdef __SOC_TEST__
-        case SOC_TEST:
-                if (sscanf(buf, "%d\n", &x) == 1) {
-                        soc_test = x;
-                        ret = count;
-                }
-                break;
-#endif
-#ifdef SPRINT_SLATE_TEST
-        case SLATE_TEST_MODE:
-             if(strncmp(buf, "1", 1) == 0)
-                    chg->slate_test_mode =true;
-             else
-                    chg->slate_test_mode =false;
-             break;                   
-#endif
-#ifdef CONFIG_MACH_VICTORY
-	case BATT_USE_CALL:
-		if (sscanf(buf, "%d\n", &x) == 1) {
-			s3c_bat_use_module(chg, USE_CALL, x);
-			ret = count;
-		}
-		break;
-	case BATT_USE_VIDEO:
-		if (sscanf(buf, "%d\n", &x) == 1) {
-			s3c_bat_use_module(chg, USE_VIDEO, x);
-			ret = count;
-		}
-		break;
-	case BATT_USE_MUSIC:
-		if (sscanf(buf, "%d\n", &x) == 1) {
-			s3c_bat_use_module(chg, USE_MUSIC, x);
-			ret = count;
-		}
-		break;
-	case BATT_USE_BROWSER:
-		if (sscanf(buf, "%d\n", &x) == 1) {
-			s3c_bat_use_module(chg, USE_BROWSER, x);
-			ret = count;
-		}
-		break;
-	case BATT_USE_HOTSPOT:
-		if (sscanf(buf, "%d\n", &x) == 1) {
-			s3c_bat_use_module(chg, USE_HOTSPOT, x);
-			ret = count;
-		}
-		break;
-	case BATT_USE_CAMERA:
-		if (sscanf(buf, "%d\n", &x) == 1) {
-			s3c_bat_use_module(chg, USE_CAMERA, x);
-			ret = count;
-		}
-		break;
-	case BATT_USE_DATA_CALL:
-		if (sscanf(buf, "%d\n", &x) == 1) {
-			s3c_bat_use_module(chg, USE_DATA_CALL, x);
-			ret = count;
-		}
-		break;
-	case BATT_USE_WIMAX:
-		if (sscanf(buf, "%d\n", &x) == 1) {
-			s3c_bat_use_module(chg, USE_WIMAX, x);
-			ret = count;
-		}
-		break;
-#endif
 	default:
 		ret = -EINVAL;
 	}
@@ -1543,10 +1213,8 @@ static irqreturn_t max8998_int_work_func(int irq, void *max8998_chg)
 
 	if (data[MAX8998_REG_IRQ3] & MAX8998_IRQ_TOPOFFR_MASK) {
 		bat_info("%s : topoff intr(%d)\n", __func__, chg->set_batt_full);
-#ifndef CONFIG_MACH_FORTE
 		if (s3c_bat_check_v_f(chg) == 0)
 			goto end;
-#endif
 		if (chg->set_batt_full)
 			chg->bat_info.batt_is_full = true;
 		else {
@@ -1649,10 +1317,6 @@ static __devinit int max8998_charger_probe(struct platform_device *pdev)
 	chg->s3c_adc_channel.s3c_adc_voltage = pdata->s3c_adc_channel->s3c_adc_voltage;
 	chg->s3c_adc_channel.s3c_adc_chg_current = pdata->s3c_adc_channel->s3c_adc_chg_current;
 	chg->s3c_adc_channel.s3c_adc_temperature = pdata->s3c_adc_channel->s3c_adc_temperature;
-#ifdef CONFIG_MACH_VICTORY
-	chg->s3c_adc_channel.s3c_adc_v_f = pdata->s3c_adc_channel->s3c_adc_v_f;
-	chg->s3c_adc_channel.s3c_adc_hw_version = pdata->s3c_adc_channel->s3c_adc_hw_version;
-#endif
 
 	chg->batt_use = 0;
 

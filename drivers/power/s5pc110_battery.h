@@ -28,42 +28,13 @@
 #define BATT_CRITICAL		8	/* 3.6037V */
 #define BATT_MINIMUM		(-28)	/* 3.554V */
 #define BATT_OFF		(-128)	/* 3.4029V */
-#if defined(CONFIG_MACH_ATLAS)
 #define  __VZW_AUTH_CHECK__
-#endif
-#ifdef CONFIG_MACH_VICTORY
-#define SPRINT_SLATE_TEST
-#endif
 /*
  * ADC channel, please update the ENDOFADC accordingly with the adc_channel_type
  * added in platform data
  */
 
 #define ENDOFADC	9
-
-/* Battery level test */
-//#define __SOC_TEST__
-
-#if 0
-#ifdef CONFIG_MACH_ATLAS 
-enum adc_channel_type {
-	// hanapark_Atlas
-	S3C_ADC_VOLTAGE = 1,
-	S3C_ADC_CHG_CURRENT = 2,
-	S3C_ADC_TEMPERATURE = 6,
-	ENDOFADC
-};
-#else
-enum adc_channel_type{
-        S3C_ADC_TEMPERATURE = 1,
-        S3C_ADC_CHG_CURRENT = 2,
-        S3C_ADC_V_F = 4,
-        S3C_ADC_HW_VERSION = 7,
-        S3C_ADC_VOLTAGE = 8,
-        ENDOFADC
-};
-#endif
-#endif
 
 enum {
 	BATT_VOL = 0,
@@ -82,24 +53,6 @@ enum {
 #endif
         BATT_CHG_CURRENT_AVER,
 	BATT_TYPE,
-#ifdef __SOC_TEST__
-	SOC_TEST,
-#endif
-#ifdef SPRINT_SLATE_TEST
-        SLATE_TEST_MODE,
-#endif
-#ifdef CONFIG_MACH_VICTORY
-	BATT_V_F_ADC,
-	BATT_USE_CALL,	/* battery use */
-	BATT_USE_VIDEO,
-	BATT_USE_MUSIC,
-	BATT_USE_BROWSER,
-	BATT_USE_HOTSPOT,
-	BATT_USE_CAMERA,
-	BATT_USE_DATA_CALL,
-	BATT_USE_WIMAX,
-	BATT_USE,	/* flags */
-#endif
 };
 
 #define TOTAL_CHARGING_TIME	(6*60*60)	/* 6 hours */
@@ -119,11 +72,7 @@ enum {
 
 #define SOC_LB_FOR_POWER_OFF		27
 
-#ifdef CONFIG_MACH_VICTORY
-#define RECHARGE_COND_VOLTAGE		4110000
-#else
 #define RECHARGE_COND_VOLTAGE		4130000
-#endif
 #define RECHARGE_COND_TIME		(30*1000)	/* 30 seconds */
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
 #define RECHARGE_COND_SOC		95		/* 95% SOC before triggering recharge condition */
