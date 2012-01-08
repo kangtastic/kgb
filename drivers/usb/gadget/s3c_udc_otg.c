@@ -439,7 +439,7 @@ void s5p_set_otg_dvfs(int enable)
 {
 	if (enable) {
 		// s5pv210_lock_dvfs_high_level(DVFS_LOCK_TOKEN_8,L1); //800MHz lock
-		s5pv210_lock_dvfs_high_level(DVFS_LOCK_TOKEN_8, L8) // 800MHz on KGB kernel
+		s5pv210_lock_dvfs_high_level(DVFS_LOCK_TOKEN_8, L8); // 800MHz on KGB kernel
 	} else {
 		s5pv210_unlock_dvfs_high_level(DVFS_LOCK_TOKEN_8);
 	}

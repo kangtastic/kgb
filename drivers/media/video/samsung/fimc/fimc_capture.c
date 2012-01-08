@@ -275,7 +275,7 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 #ifdef CONFIG_MACH_ATLAS_EH03
 		if (vtmode == 1 && device_id != 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 270)) {
 #else
-		if (ctrl->vt_mode == 1 && fimc->active_camera != 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 2
+		if (ctrl->vt_mode == 1 && fimc->active_camera != 0 && (ctrl->cap->rotate == 90 || ctrl->cap->rotate == 270)) {
 #endif
 			ctrl->cam->window.left = 136;
 			ctrl->cam->window.top = 0;
@@ -287,7 +287,7 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 			dev_err(ctrl->dev, "vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
 		} else if (device_id != 0 && vtmode != 1) {
 #else
-			fimc_err("vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->c
+			fimc_err("vtmode = 1, rotate = %d, device = front, cam->width = %d, cam->height = %d\n", ctrl->cap->rotate, ctrl->cam->width, ctrl->cam->height);
 		} else if (fimc->active_camera != 0) {
 #endif
 			ctrl->cam->window.left = 136;
@@ -299,7 +299,7 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 #ifdef CONFIG_MACH_ATLAS_EH03
 			dev_err(ctrl->dev, "%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", __func__, ctrl->cam->width, ctrl->cam->height);
 #else
-			fimc_err("%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", _
+			fimc_err("%s, crop(368x480), vtmode = 0, device = front, cam->width = %d, cam->height = %d\n", __func__, ctrl->cam->width, ctrl->cam->height);
 #endif
 		} else {		
 			ctrl->cam->window.left = 0;
@@ -307,7 +307,7 @@ static int fimc_camera_start(struct fimc_control *ctrl)
 			ctrl->cam->window.width = ctrl->cam->width;
 			ctrl->cam->window.height = ctrl->cam->height;
 #ifndef CONFIG_MACH_ATLAS_EH03
-			fimc_err("%s, vtmode = %d, device = %d, cam->width = %d, cam->height = %d\n", __func__, ctrl->vt
+			fimc_err("%s, vtmode = %d, device = %d, cam->width = %d, cam->height = %d\n", __func__, ctrl->vt_mode, fimc->active_camera, ctrl->cam->width, ctrl->cam->height);
 #endif
 		}
 	}
