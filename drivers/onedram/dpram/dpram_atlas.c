@@ -160,7 +160,7 @@ static struct pdp_info *pdp_table[MAX_PDP_CONTEXT];
 static DEFINE_MUTEX(pdp_lock);
 
 static inline struct pdp_info * pdp_get_dev(u8 id);
-static inline void check_pdp_table(char*, int);
+static inline void check_pdp_table(const char*, int);
 
 /*****************************************************************************/
 
@@ -448,7 +448,7 @@ static int dpram_write(dpram_device_t *device,
 	int size = 0;
 	u16 head, tail;
 	u16 irq_mask = 0;
-	unsigned long flags;
+//	unsigned long flags;
 
 //	down_interruptible(&write_mutex);	
 #ifdef PRINT_WRITE
@@ -667,7 +667,8 @@ static int dpram_read_raw(dpram_device_t *device, const u16 non_cmd)
 	struct pdp_hdr hdr;
 	u16 read_offset;
 	u8 len_high, len_low, id, control;
-	u16 pre_hdr_size, pre_data_size;
+//	u16 pre_hdr_size, pre_data_size;
+	u16 pre_data_size;
 	u8 ch;
 
 	int i;
@@ -1780,9 +1781,11 @@ static void cmd_phone_start_handler(void)
 
 
 	printk(KERN_ERR "[OneDRAM] Received 0xc8 from MailboxAB (Phone Boot OK).\n");
+#ifdef _ENABLE_ERROR_DEVICE
 	if(!phone_sync) {
 		dpram_init_and_report();
 	}
+#endif
 }
 
 static void cmd_req_time_sync_handler(void)
@@ -2419,12 +2422,13 @@ static void vs_del_dev(struct pdp_info *dev)
 	tty_unregister_driver(tty_driver);
 }
 
-static inline void check_pdp_table(char * func, int line)
+static inline void check_pdp_table(const char * func, int line)
 {
 	int slot;
 	for (slot = 0; slot < MAX_PDP_CONTEXT; slot++) {
 		if(pdp_table[slot])
-			printk(KERN_ERR "----->[%s,%d] addr: %x slot: %d id: %d, name: %s\n", func, line, pdp_table[slot], slot, pdp_table[slot]->id, pdp_table[slot]->vs_dev.tty_name);
+//			printk(KERN_ERR "----->[%s,%d] addr: %x slot: %d id: %d, name: %s\n", func, line, pdp_table[slot], slot, pdp_table[slot]->id, pdp_table[slot]->vs_dev.tty_name);
+			printk(KERN_ERR "----->[%s,%d] slot: %d id: %d, name: %s\n", func, line, slot, pdp_table[slot]->id, pdp_table[slot]->vs_dev.tty_name);
 	}
 
 
@@ -2521,7 +2525,7 @@ static int multipdp_init(void)
 		{ .id = 1, .ifname = "ttyCSD" },
 		{ .id = 7, .ifname = "ttyCDMA" },
 		{ .id = 9, .ifname = "ttyTRFB" },
-		{ .id = 27, .ifname = "ttyCIQ" },
+//		{ .id = 27, .ifname = "ttyCIQ" },
 	};
 
 
@@ -2692,8 +2696,9 @@ static int dpram_shutdown(struct platform_device *dev)
 	printk("\ndpram_shutdown ret : %d\n", ret);
 
 	unregister_dpram_driver();
+#ifdef _ENABLE_ERROR_DEVICE
 	unregister_dpram_err_device();
-	
+#endif
 	free_irq(IRQ_ONEDRAM_INT_N, NULL);
 	free_irq(IRQ_PHONE_ACTIVE, NULL);
 
