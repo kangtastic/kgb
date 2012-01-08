@@ -45,6 +45,10 @@
 #include <linux/android_alarm.h>
 #include "s5pc110_battery.h"
 
+#ifdef CONFIG_BATTERY_S5PC110_TRICKLE
+#include <linux/miscdevice.h>
+#endif
+
 #define BAT_POLLING_INTERVAL	10000
 #define BAT_WAITING_INTERVAL	20000	/* 20 sec */
 #define BAT_WAITING_COUNT	(BAT_WAITING_INTERVAL / BAT_POLLING_INTERVAL)
@@ -167,6 +171,7 @@ static ssize_t s3c_bat_store_attrs(struct device *dev, struct device_attribute *
 				   const char *buf, size_t count);
 
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
+bool trickle_enabled = false;
 static int s3c_cable_status_update(struct chg_data *chg);
 #endif
 
@@ -747,9 +752,11 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 
 	if ((discharge_reason & DISCONNECT_BAT_FULL) &&
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
-	    (chg->bat_info.batt_vcell < RECHARGE_COND_VOLTAGE) && (chg->bat_info.batt_soc < RECHARGE_COND_SOC)) {
+	    (chg->bat_info.batt_vcell < RECHARGE_COND_VOLTAGE) &&
+	    ((! trickle_enabled) || ((trickle_enabled) && (chg->bat_info.batt_soc < RECHARGE_COND_SOC))
+		)) {
 #else
-	    chg->bat_info.batt_vcell < RECHARGE_COND_VOLTAGE) {
+		chg->bat_info.batt_vcell < RECHARGE_COND_VOLTAGE) {
 #endif
 		if (recharge_count < BAT_WAITING_COUNT)
 			recharge_count++;
@@ -757,12 +764,18 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 			chg->bat_info.dis_reason &= ~DISCONNECT_BAT_FULL;
 			recharge_count = 0;
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
-			bat_info("batt recharging (vol=%d; soc=%d)\n", chg->bat_info.batt_vcell, chg->bat_info.batt_soc);
-			call_cable_status_update = 1;
+			if (trickle_enabled) {
+				bat_info("batt recharging (vol=%d; soc=%d)\n", chg->bat_info.batt_vcell, chg->bat_info.batt_soc);
+				call_cable_status_update = 1;
+			}
+			else {
+				bat_info("batt recharging (vol=%d)\n", chg->bat_info.batt_vcell);
+			}
 #else
 			bat_info("batt recharging (vol=%d)\n", chg->bat_info.batt_vcell);
 #endif
 		}
+
 	} else if ((discharge_reason & DISCONNECT_BAT_FULL) &&
 	    chg->bat_info.batt_vcell >= RECHARGE_COND_VOLTAGE)
 		recharge_count = 0;
@@ -778,7 +791,8 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 
 	if ((discharge_reason & DISCONNECT_OVER_TIME) &&
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
-	    (chg->bat_info.batt_vcell < RECHARGE_COND_VOLTAGE) && (chg->bat_info.batt_soc < RECHARGE_COND_SOC)) {
+	    (chg->bat_info.batt_vcell < RECHARGE_COND_VOLTAGE) &&
+	    ((! trickle_enabled) || ((trickle_enabled) && (chg->bat_info.batt_soc < RECHARGE_COND_SOC)))) {
 #else
 	    chg->bat_info.batt_vcell < RECHARGE_COND_VOLTAGE) {
 #endif
@@ -789,7 +803,8 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 			recharge_count = 0;
 			bat_info("batt recharging (vol=%d)\n", chg->bat_info.batt_vcell);
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
-			call_cable_status_update = 1;
+			if (trickle_enabled)
+				call_cable_status_update = 1;
 #endif
 		}
 	} else if ((discharge_reason & DISCONNECT_OVER_TIME) &&
@@ -825,7 +840,7 @@ static void s3c_bat_discharge_reason(struct chg_data *chg)
 		chg->set_batt_full, chg->bat_info.batt_is_full,
 		chg->cable_status, chg->bat_info.charging_status, chg->bat_info.dis_reason);
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
-	if(call_cable_status_update == 1) {
+	if ((trickle_enabled) && (call_cable_status_update == 1)) {
 		chg->bat_info.batt_is_full = false;		// Reset battery full flag
 		chg->set_batt_full = false;				// Reset battery full flag
 		s3c_cable_status_update(chg);			// Trigger a cable status update to start charging again
@@ -1220,7 +1235,8 @@ static irqreturn_t max8998_int_work_func(int irq, void *max8998_chg)
 		else {
 			chg->set_batt_full = true;
 #ifdef CONFIG_BATTERY_S5PC110_TRICKLE
-			chg->bat_info.dis_reason = DISCONNECT_BAT_FULL;		// djp952: Added discharge reason flag
+			if (trickle_enabled)
+				chg->bat_info.dis_reason = DISCONNECT_BAT_FULL;		// djp952: Added discharge reason flag
 #endif
 
 			if (chg->pdata->termination_curr_adc > 0)
@@ -1257,6 +1273,39 @@ err:
 	pr_err("%s : pmic read error\n", __func__);
 	return IRQ_HANDLED;
 }
+
+#ifdef CONFIG_BATTERY_S5PC110_TRICKLE
+static ssize_t trickle_charge_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%u\n", (trickle_enabled ? 1 : 0));
+}
+static ssize_t trickle_charge_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	u32 data;
+	if ((sscanf(buf, "%u\n", &data) && ( data == 1 )))
+			trickle_enabled = true; // Once trickle charge is enabled, it should stay
+						// enabled until the next reboot no matter what,
+						// just in case allowing it to be toggled causes
+						// any unforseen problems
+	return size;
+}		
+
+static DEVICE_ATTR(trickle_charge, S_IRUGO | S_IWUGO, trickle_charge_show, trickle_charge_store);
+
+static struct attribute *trickle_charge_attributes[] = {
+	&dev_attr_trickle_charge.attr,
+	NULL
+};
+
+static struct attribute_group trickle_charge_group = {
+	.attrs = trickle_charge_attributes,
+};
+
+static struct miscdevice trickle_charge_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "trickle_charge",
+};
+#endif
 
 static __devinit int max8998_charger_probe(struct platform_device *pdev)
 {
@@ -1430,6 +1479,15 @@ static __devinit int max8998_charger_probe(struct platform_device *pdev)
 	wake_lock(&chg->work_wake_lock);
 	queue_work(chg->monitor_wqueue, &chg->bat_work);
 
+#ifdef CONFIG_BATTERY_S5PC110_TRICKLE
+	misc_register(&trickle_charge_device);
+	if (sysfs_create_group(&trickle_charge_device.this_device->kobj, &trickle_charge_group) < 0)
+	{
+		printk("%s sysfs_create_group fail\n", __FUNCTION__);
+		pr_err("Failed to create sysfs group for device (%s)!\n", trickle_charge_device.name);
+	}
+#endif
+
 	return 0;
 
 err_irq:
@@ -1470,6 +1528,10 @@ static int __devexit max8998_charger_remove(struct platform_device *pdev)
 	wake_lock_destroy(&chg->lowbat_wake_lock);
 	mutex_destroy(&chg->mutex);
 	kfree(chg);
+
+#ifdef CONFIG_BATTERY_S5PC110_TRICKLE
+	misc_deregister(&trickle_charge_device);
+#endif
 
 	return 0;
 }
