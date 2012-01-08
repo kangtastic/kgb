@@ -27,7 +27,6 @@ KERNEL_IMAGE=${ROOTDIR}/arch/arm/boot/zImage
 # More initializations (they need to go somewhere because of set -u)
 KERNEL_VERSION=""
 TARGET=""
-TRICKLE=0
 DEFCONFIG=""
 
 ####################
@@ -48,7 +47,6 @@ echo 'Usage: ./build.sh -t TARGET [-bh]
 
 	-t TARGET	mandatory argument to specify a ROM target
 			valid values of TARGET are "EH03", "EI20", and "EH09"
-	-b		include battery trickle charge patch by djp952 (EXPERIMENTAL)
 	-h		displays this help message and exit
 
 Example: ./build.sh -t EH03
@@ -93,9 +91,6 @@ while getopts t:bh OPT; do
 		t)
 			TARGET=$OPTARG
 			;;
-		b)
-			TRICKLE=1
-			;;
 		h)
 			help_msg 0
 			;;
@@ -116,10 +111,6 @@ else
 	echo "./build.sh: invalid target: $TARGET" >&2 && help_msg 1
 fi
 
-if [ $TRICKLE = 1 ]; then
-	DEFCONFIG="${DEFCONFIG}_trickle"
-	TARGET="${TARGET}-TRICKLE"
-fi
 KERNEL_VERSION="KGB-${TARGET}-${DATE}.${TIME}"
 DEFCONFIG="${DEFCONFIG}_defconfig"
 
