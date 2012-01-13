@@ -5,13 +5,6 @@
 mount -t rootfs -o rw,remount rootfs /
 mount -o rw,remount /system /system
 
-# Create /etc/init.d as necessary
-if ! [ -d /system/etc/init.d ]; then
-	/bin/mkdir -p /system/etc/init.d
-	chown 0.0 /system/etc/init.d
-	chmod 755 /system/etc/init.d
-fi
-
 # The ramdisk's busybox does not have grep nor ls so check for a system busybox
 if [ -x /system/xbin/busybox ]; then
 # Create resolv.conf, add multicasted Verizon and Google DNS servers as necessary
@@ -49,4 +42,4 @@ echo 4 > $PSVM/min_free_order_shift
 # Same with this one, although there's much less evidence in this case
 # echo 4096 > $PSVM/min_free_kbytes
 echo 3 > $PSVM/page-cluster
-echo 60 > $PSVM/swappiness
+echo 50 > $PSVM/swappiness
