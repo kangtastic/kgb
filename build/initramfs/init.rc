@@ -524,13 +524,12 @@ on boot
 # killed by the kernel.  These are used in ActivityManagerService.
     setprop ro.FOREGROUND_APP_ADJ 0
     setprop ro.VISIBLE_APP_ADJ 1
-    setprop ro.PERCEPTIBLE_APP_ADJ 1
-    setprop ro.HEAVY_WEIGHT_APP_ADJ 2
-    setprop ro.SECONDARY_SERVER_ADJ 2
-    setprop ro.BACKUP_APP_ADJ 2
-    setprop ro.HOME_APP_ADJ 4
+    setprop ro.PERCEPTIBLE_APP_ADJ 2
+    setprop ro.HEAVY_WEIGHT_APP_ADJ 4
+    setprop ro.SECONDARY_SERVER_ADJ 5
+    setprop ro.BACKUP_APP_ADJ 6
+    setprop ro.HOME_APP_ADJ 3
     setprop ro.HIDDEN_APP_MIN_ADJ 7
-    setprop ro.CONTENT_PROVIDER_MEM 14
     setprop ro.EMPTY_APP_ADJ 15
 
 # to enable wifi
@@ -538,16 +537,15 @@ on boot
 
 # Define the memory thresholds at which the above process classes will
 # be killed.  These numbers are in pages (4k).
-    setprop ro.FOREGROUND_APP_MEM 2560
-    setprop ro.VISIBLE_APP_MEM 4096
-    setprop ro.PERCEPTIBLE_APP_MEM 4096
-    setprop ro.HEAVY_WEIGHT_APP_MEM 4096
-    setprop ro.SECONDARY_SERVER_MEM 6144
-    setprop ro.BACKUP_APP_MEM 6144
+    setprop ro.FOREGROUND_APP_MEM 1536
+    setprop ro.VISIBLE_APP_MEM 3072
+    setprop ro.PERCEPTIBLE_APP_MEM 4608
+    setprop ro.HEAVY_WEIGHT_APP_MEM 7680
+    setprop ro.SECONDARY_SERVER_MEM 9216
+    setprop ro.BACKUP_APP_MEM 10752
     setprop ro.HOME_APP_MEM 6144
-    setprop ro.HIDDEN_APP_MEM 10240
-    setprop ro.CONTENT_PROVIDER_MEM 11264
-    setprop ro.EMPTY_APP_MEM 12288
+    setprop ro.HIDDEN_APP_MEM 12288
+    setprop ro.EMPTY_APP_MEM 14336
     
     setprop ro.bt.bdaddr_path "/data/misc/bluetooth/bt_addr"
 
@@ -555,11 +553,11 @@ on boot
 # Note that the driver only supports 6 slots, so we have combined some of
 # the classes into the same memory level; the associated processes of higher
 # classes will still be killed first.
-    write /sys/module/lowmemorykiller/parameters/adj 0,1,2,7,14,15
+    write /sys/module/lowmemorykiller/parameters/adj 0,1,3,5,7,15
 
     write /proc/sys/vm/overcommit_memory 1
     write /proc/sys/vm/min_free_order_shift 4
-    write /sys/module/lowmemorykiller/parameters/minfree 2560,4096,6144,10240,11264,12288
+    write /sys/module/lowmemorykiller/parameters/minfree 1536,3072,6144,9216,12288,14336
 
     # Set init its forked children's oom_adj.
     write /proc/1/oom_adj -16
