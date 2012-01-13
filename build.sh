@@ -1,6 +1,9 @@
 #!/bin/bash
 # Instantaneous date/time
-DATE=$(date +%m%d)
+YEAR=$(printf "\x$(printf %x $((58 + $(date +%y))))")
+MONTH=$(printf "\x$(printf %x $((64 + $(date +%m))))")
+DAY=$(date +%d)
+DATE=${YEAR}${MONTH}${DAY}
 TIME=$(date +%H%M)
 START_TIME_SEC=$(date +%s)
 
@@ -43,14 +46,13 @@ help_msg()
 # Print usage information and exit
 # $1: exit code (0 or 1)
 {
-echo 'Usage: ./build.sh -t TARGET [-bh]
+echo 'Usage: ./build.sh -t TARGET [-h]
 
 	-t TARGET	mandatory argument to specify a ROM target
 			valid values of TARGET are "EH03", "EI20", and "EH09"
 	-h		displays this help message and exit
 
-Example: ./build.sh -t EH03
-	 ./build.sh -t EH09 -b'
+Example: ./build.sh -t EH03'
 exit $1
 }
 makezip()
