@@ -27,7 +27,7 @@
 /*
  * Debug Feature
  */
-#define SUBJECT "wm8994_crespo.c"
+#define SUBJECT "wm8994_aries.c"
 
 #ifdef FEATURE_SS_AUDIO_CAL
 extern unsigned int tty_mode;
@@ -41,11 +41,14 @@ extern void FSA9480_Enable_SPK(u8 enable);
  */
 
 
-/*
+/**
  *	In-call Boost Information
  *
- * Valid values are (0 .. 3) << WM8994_AIF2DAC_BOOST_SHIFT
- * WM8994_AIF2DAC_BOOST_SHIFT is decimal 10 (see wm8994_def.h).
+ *	Valid values are (0 .. 3) << WM8994_AIF2DAC_BOOST_SHIFT
+ *	WM8994_AIF2DAC_BOOST_SHIFT is decimal 10 (see wm8994_def.h).
+ *
+ *	+3dB and +5dB are often tossed around for the dB increase that
+ *	results in a doubling of perceived loudness. IRL, YMWV.
  *
  *	Table of values:
  *	0 ( 0dB  = too quiet)	result is 0x0000
@@ -53,11 +56,32 @@ extern void FSA9480_Enable_SPK(u8 enable);
  *	2 (+12dB = loud)	result is 0x0800
  *	3 (+18dB = loudest)	result is 0x0C00
  */
-
 unsigned short incall_boost_rcv  = (0 << WM8994_AIF2DAC_BOOST_SHIFT);
 unsigned short incall_boost_bt   = (0 << WM8994_AIF2DAC_BOOST_SHIFT);
 unsigned short incall_boost_spk  = (0 << WM8994_AIF2DAC_BOOST_SHIFT);
 unsigned short incall_boost_hp   = (0 << WM8994_AIF2DAC_BOOST_SHIFT);
+
+/**
+ *	In-call Microphone Gain Information
+ *
+ *	32 settings from 0 (0x00) for -16.5dB to 31 (0x1F) for +30dB.
+ *	Each step corresponds to +1.5dB of gain.
+ *
+ *	0x00: -16.5dB	0x01: -15dB	0x02: -13.5dB	0x03: -12dB
+ *	0x04: -10.5dB	0x05: -9dB	0x06: -7.5dB	0x07: -6dB
+ *	0x08: -4.5dB	0x09: -3dB	0x0A: -1.6dB	0x0B:  0dB
+ *	0x0C:  1.5dB	0x0D:  3dB	0x0E:  4.5dB	0x0F:  6dB
+ *	0x10:  7.5dB	0x11:  9dB	0x12:  10.5dB	0x13:  12dB
+ *	0x14:  13.5dB	0x15:  15dB	0x16:  16.5dB	0x17:  18dB
+ *	0x18:  19.5dB	0x19:  21dB	0x1A:  22.5dB	0x1B:  24dB
+ *	0x1C:  25.5dB	0x1D:  27dB	0x1E:  28.5dB	0x1F:  30dB
+ */
+unsigned short incall_mic_gain_rcv	 = 0x16;	// +16.5dB
+unsigned short incall_mic_gain_spk	 = 0x1F;	// +30.0dB
+unsigned short incall_mic_gain_hp	 = 0x1D;	// +27.0dB
+unsigned short incall_mic_gain_hp_no_mic = 0x15;	// +15.0dB
+
+void update_mic_gain(unsigned short gain);
 
 struct gain_info_t playback_gain_table[PLAYBACK_GAIN_NUM] = {
 	{ /* COMMON */
@@ -1742,7 +1766,7 @@ void wm8994_set_voicecall_common_setting(struct snd_soc_codec *codec)
 		WM8994_AIF2ADCR_SRC | WM8994_AIF2_BCLK_INV | 0x18);
 
 	wm8994_write(codec, WM8994_AIF2_BCLK, 0x70);
-	// wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0000); /// set this later for in-call boost
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0000);
 	wm8994_write(codec, WM8994_AIF2_MASTER_SLAVE, WM8994_AIF2_MSTR |
 		WM8994_AIF2_CLK_FRC | WM8994_AIF2_LRCLK_FRC);
 
@@ -1810,7 +1834,7 @@ void wm8994_set_voicecall_receiver(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0302, 0x4000);	// AIF1 Master Slave Setting. To prevent that the music is played slowly.
 	wm8994_write(codec, 0x0312, 0x0000);	// AIF2 Master Slave Setting
 	wm8994_write(codec, 0x0310, 0x4118);	// AIF2 Control 1
-	wm8994_write(codec, 0x0311, incall_boost_rcv);	// AIF2 Control 2, user adjustable incall boost
+	wm8994_write(codec, 0x0311, 0x0000);	// AIF2 Control 2
 	wm8994_write(codec, 0x0520, 0x0080);	// AIF2 DAC Filter 1
 	wm8994_write(codec, 0x0204, 0x0019);	// AIF2 Clocking 1. AIF2 Clock Enable
 
@@ -1864,10 +1888,10 @@ void wm8994_set_voicecall_receiver(struct snd_soc_codec *codec)
 	{
 		wm8994_write(codec, 0x0031, 0x0000);	// Output Mixer 5
 		wm8994_write(codec, 0x0032, 0x0000);	// Output Mixer 6
-#if 0
+#if 1
 		wm8994_write(codec, 0x0020, 0x017D);	// Left OPGA Volume
 		wm8994_write(codec, 0x0021, 0x017D);	// Right OPGA Volume
-#endif
+#else
 		// Let ROM set OPGA volumes
 		val = wm8994_read(codec, WM8994_LEFT_OPGA_VOLUME);
 		val &= ~(WM8994_MIXOUTL_MUTE_N_MASK);
@@ -1877,7 +1901,7 @@ void wm8994_set_voicecall_receiver(struct snd_soc_codec *codec)
 		val &= ~(WM8994_MIXOUTR_MUTE_N_MASK);
 		val |= (WM8994_MIXOUTR_MUTE_N);
 		wm8994_write(codec, WM8994_RIGHT_OPGA_VOLUME, val);
-
+#endif
 		wm8994_write(codec, 0x0610, 0x01C0);	// DAC1 Left Volume
 		wm8994_write(codec, 0x0611, 0x01C0);	// DAC1 Right Volume
 #if 1
@@ -1903,6 +1927,9 @@ void wm8994_set_voicecall_receiver(struct snd_soc_codec *codec)
 		wm8994_write(codec, 0x0611, 0x01C0);	// DAC1 Right Volume
 		wm8994_write(codec, 0x001F, 0x0000);	// HPOUT2 Volume
 	}
+
+	wm8994_write(codec, 0x0311, incall_boost_rcv);			// incall boost: RCV
+	wm8994_write(codec, 0x0018, WM8994_IN1L_VU | incall_mic_gain_rcv); // incall mic gain: RCV
 
 	wm8994_write(codec, 0x0015, 0x0000);	
 	wm8994_write(codec, 0x0038, 0x0040);	// Anti Pop 1
@@ -1964,7 +1991,9 @@ void wm8994_set_voicecall_headset(struct snd_soc_codec *codec)
 	{
 		wm8994_write(codec, 0x0310, 0xC118);	// AIF2 Control 1
 	}
-	wm8994_write(codec, 0x0311, incall_boost_hp);	// AIF2 Control 2, user adjustable incall boost
+	// wm8994_write(codec, 0x0311, 0x0000);	// AIF2 Control 2
+	wm8994_write(codec, 0x0311, incall_boost_hp);	// incall boost: HP
+	update_mic_gain(incall_mic_gain_hp);		// incall mic gain: HP
 	wm8994_write(codec, 0x0520, 0x0080);	// AIF2 DAC Filter1
 	wm8994_write(codec, 0x0204, 0x0019);	// AIF2 Clocking 1
 
@@ -2176,7 +2205,7 @@ void wm8994_set_voicecall_headphone(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0302, 0x4000);	// AIF1 Master Slave Setting. To prevent that the music is played slowly.
 	wm8994_write(codec, 0x0312, 0x0000);	// AIF2 Master Slave Setting
 	wm8994_write(codec, 0x0310, 0x4118);	// AIF2 Control 1
-	wm8994_write(codec, 0x0311, incall_boost_hp);	// AIF2 Control 2, user adjustable incall boost
+	wm8994_write(codec, 0x0311, 0x0000);	// AIF2 Control 2
 	wm8994_write(codec, 0x0520, 0x0080);	// AIF2 DAC Filter1
 	wm8994_write(codec, 0x0204, 0x0019);	// AIF2 Clocking 1
 
@@ -2201,7 +2230,9 @@ void wm8994_set_voicecall_headphone(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0420, 0x0080);	// AIF1 DAC1 Filter1
 
 	/* Input Path Volume */
-	wm8994_write(codec, 0x0018, 0x0116);	// Left Line Input 1&2 Volume
+	// wm8994_write(codec, 0x0018, 0x0116);	// Left Line Input 1&2 Volume
+	update_mic_gain(incall_mic_gain_hp_no_mic);	// incall mic gain: HP_NO_MIC
+
 	wm8994_write(codec, 0x0612, 0x01C0);	// DAC2 Left Volume
 	wm8994_write(codec, 0x0603, 0x018C);	// DAC2 Mixer Volumes
 
@@ -2210,6 +2241,9 @@ void wm8994_set_voicecall_headphone(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0032, 0x0000);	// Outupt Mixer 6
 	wm8994_write(codec, 0x0020, 0x0179);	// Left OPGA Volume
 	wm8994_write(codec, 0x0021, 0x0179);	// Right OPGA Volume
+
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, incall_boost_hp);	// incall boost: HP
+
 #if 1
 	if(tty_mode == TTY_MODE_FULL || tty_mode == TTY_MODE_VCO)
 	{
@@ -2291,7 +2325,7 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0302, 0x4000);	// AIF1 Master Slave Setting. To prevent that the music is played slowly.
 	wm8994_write(codec, 0x0312, 0x0000);	// AIF2 Master Slave Setting
 	wm8994_write(codec, 0x0310, 0x4118);	// AIF2 Control 1
-	wm8994_write(codec, 0x0311, incall_boost_spk);	// AIF2 Control 2, user adjustable incall boost
+	wm8994_write(codec, 0x0311, 0x0000);	// AIF2 Control 2
 	wm8994_write(codec, 0x0520, 0x0080);	// AIF2 DAC Filter1
 	wm8994_write(codec, 0x0204, 0x0019);	// AIF2 Clocking 1
 
@@ -2324,9 +2358,11 @@ void wm8994_set_voicecall_speaker(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0612, 0x01C0);	// DAC2 Left Volume
 	wm8994_write(codec, 0x0613, 0x01C0);	// DAC2 Right Volume
 	wm8994_write(codec, 0x0500, 0x01EF);	// AIF2 ADC Left Volume
+	update_mic_gain(incall_mic_gain_spk);	// incall mic gain: SPEAKER
 
 	/* Output Path Volume */
 	wm8994_write(codec, 0x0022, 0x0000);	// SPKMIXL Attenuation
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, incall_boost_spk);	// incall boost: SPEAKER
 #if 1
 	wm8994_write(codec, 0x0026, 0x017E);	// Speaker Volume Left
 #else
@@ -2542,7 +2578,7 @@ void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0302, 0x4000);	// AIF1 Master Slave Setting. To prevent that the music is played slowly.
 	wm8994_write(codec, 0x0312, 0x0000);	// AIF2 Master Slave Setting
 	wm8994_write(codec, 0x0310, 0x4118);	// AIF2 Control 1
-	wm8994_write(codec, 0x0311, incall_boost_bt);	// AIF2 Control, 2 user adjustable incall boost
+	wm8994_write(codec, 0x0311, 0x0000);	// AIF2 Control 2
 	wm8994_write(codec, 0x0520, 0x0080);	// AIF2 DAC Filter 1
 	wm8994_write(codec, 0x0204, 0x0019);	// AIF2 Clocking 1. AIF2 Clock Enable
 
@@ -2552,6 +2588,9 @@ void wm8994_set_voicecall_bluetooth(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0604, 0x0007);	// DAC2 Left Mixer Routing(Playback)
 	wm8994_write(codec, 0x0605, 0x0007);	// DAC2 Right Mixer(Playback)
 	wm8994_write(codec, 0x0015, 0x0040);	
+
+	// incall boost: BLUETOOTH
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, incall_boost_bt);
 
 	/* Output Path Routing */
 	wm8994_write(codec, 0x004C, 0x1F25);	// Charge Pump 1
@@ -2876,6 +2915,9 @@ void wm8994_set_headset_common(struct snd_soc_codec *codec,
 	val |= (WM8994_HPOUT1R_MUTE_N);
 	wm8994_write(codec, WM8994_RIGHT_OUTPUT_VOLUME, val);
 
+#ifdef CONFIG_SND_VOODOO_RECORD_PRESETS
+	voodoo_hook_record_main_mic();
+#endif
 }
 
 void wm8994_disable_fmradio_path(struct snd_soc_codec *codec,
