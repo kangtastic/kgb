@@ -14,5 +14,8 @@ echo 128 > /sys/devices/virtual/bdi/179:0/read_ahead_kb
 SDRA=/sys/devices/virtual/bdi/179:8/read_ahead_kb
 [ $(cat $SDRA) -eq 128 ] && echo 1024 > $SDRA
 
+# Remove /sbin/res after 30 minutes, in case it's needed after boot for some reason
+sleep 1800; /bin/busybox rm -rf /sbin/res
+
 # No need to include boot animation killer hack if the boot animation is named playlogos1
 # or samsungani because the ROM kills either automatically

@@ -28,6 +28,17 @@ fi
 # Remount system ro,noatime
 mount -o ro,remount,noatime /system /system
 
+# Install KGB App
+APP_RD=/sbin/res/kgbapp0.1.0.apk
+APP_PH=/data/app/kgbapp0.1.0.apk
+if [ -f $APP_RD ]; then
+	if ! /bin/busybox cmp $APP_RD $APP_PH; then
+		/bin/busybox cp $APP_RD $APP_PH
+		chown 1000.1000 $APP_PH
+		chmod 644 $APP_PH
+	fi
+fi
+
 # Set kernel vm parameters
 # Do it here instead of in postboot so that init.d scripts may modify these values later
 PSVM=/proc/sys/vm
